@@ -39,6 +39,7 @@ body {
 textarea {
     font-family: 'Roboto Mono', monospace;
     padding: 1rem;
+    resize: vertical;
     background-color: var(--textbox-color);
 }
 
