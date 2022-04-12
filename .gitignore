@@ -1,0 +1,5 @@
+# IDE generated files
+.vscode/
+
+# MacOS store
+*.DS_Store

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
+
+    <!-- SEO title & description -->
+    <title>Web Micropython REPL | Silicon Witchery</title>
+    <meta name="description" content="Web Bluetooth based REPL for MicroPython
+        running on Silicon Witchery FPGA modules.">
+    <link rel="canonical" href="https://repl.siliconwitchery.com" />
+
+    <!-- Facebook & Twitter card meta -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@SiliconWitchery" />
+    <meta property="og:title" content="Web Micropython REPL | Silicon Witchery" />
+    <meta property="og:description" content="Web Bluetooth based REPL for
+        MicroPython running on Silicon Witchery FPGA modules." />
+    <meta property="og:image" content="https://repl.siliconwitchery.com/images/share.jpg" />
+    <meta property="og:url" content="https://repl.siliconwitchery.com" />
+    <meta property="og:type" content="website" />
+
+    <script src="bluetooth.js"></script>
+</head>
+
+<body>
+    <div class="app">
+
+        <!-- Title -->
+        <h1>MicroPython Web REPL</h1>
+
+        <!-- REPL box -->
+        <textarea type="text" id="replConsole" rows=20 autocomplete="off" autocorrect="off" autocapitalize="off"
+            spellcheck="false"></textarea>
+
+        <!-- Buttons -->
+        <div class="buttons">
+
+            <button id="connectButton" title="Open Bluetooth connection pane">Connect</button>
+            <button id="ctrlAButton" title="Enter raw REPL mode" disabled>Ctrl-A</button>
+            <button id="ctrlBButton" title="Enter normal REPL mode" disabled>Ctrl-B</button>
+            <button id="ctrlCButton" title="Interrupt a running program" disabled>Ctrl-C</button>
+            <button id="ctrlDButton" title="Reset the device" disabled>Ctrl-D</button>
+            <button id="ctrlEButton" title="Enter paste mode" disabled>Ctrl-E</button>
+
+        </div>
+
+        <!-- Footer -->
+        <footer>
+
+            <p>For help and source code, visit the the
+                <a href="https://github.com/siliconwitchery/web-bluetooth-repl" target="_blank">repository</a>
+            </p>
+
+            <p>Copyright 2022 <a href="https://www.siliconwitchery.com" target="_blank">Silicon Witchery</a></p>
+
+        </footer>
+
+    </div>
+
+</body>
+
+<script>
+
+    // Logic for connect/disconnect button
+    document.getElementById('connectButton').addEventListener('click', function () {
+
+        // Call the connectDisconnect() function
+        connectDisconnect()
+            .then(function (result) {
+                switch (result) {
+
+                    // When connected
+                    case "connected":
+
+                        // Show "Disconnect"
+                        document.getElementById('connectButton').innerHTML = "Disconnect";
+
+                        // Enable the buttons
+                        document.getElementById('ctrlAButton').disabled = false;
+                        document.getElementById('ctrlBButton').disabled = false;
+                        document.getElementById('ctrlCButton').disabled = false;
+                        document.getElementById('ctrlDButton').disabled = false;
+                        document.getElementById('ctrlEButton').disabled = false;
+
+                        // Clear the text area
+                        document.getElementById('replConsole').value = "";
+
+                        // Focus onto the text area
+                        document.getElementById('replConsole').focus();
+
+                        break;
+
+                    // When disconnected
+                    case "disconnected":
+
+                        // Run the disconnect handler
+                        disconnectHandler();
+
+                        break;
+                }
+            })
+
+            // If we couldn't connect, print the reason in the text area
+            .catch(function (error) {
+                document.getElementById('replConsole').value = error;
+            })
+    })
+
+    // Send data over Bluetooth when a return is detected in the text area
+    document.getElementById('replConsole').addEventListener()
+
+
+    // document.getElementById('sendButton').addEventListener('click', function () {
+    //     // Call the JSON send function and print out the formatted JSON
+    //     sendJSONData(document.getElementById('outboundJSON').value, force)
+    //         .then(function (prettyJSON) {
+    //             document.getElementById('outboundJSON').value = prettyJSON;
+    //             document.getElementById('sendButton').innerHTML = "Send <b>OK</b>";
+    //             force = false;
+    //         })
+    //         .catch(function () {
+    //             // If the JSON was invalid, print an error
+    //             document.getElementById('sendButton').innerHTML = "<b>Invalid</b> Send anyway";
+    //             force = true;
+    //         })
+    // })
+
+    // Send 0x01 over bluetooth when Ctrl-A is pressed
+    // document.getElementById('ctrlAButton').addEventListener('click', function () {
+    //     document.getElementById('replConsole').value = "TODO";
+    // })
+
+    // When data arrives, print it to the text area
+    function incomingDataHandler(event) {
+
+        // Decode the byte array into a string
+        const decoder = new TextDecoder('utf-8');
+        let value = event.target.value;
+        let string = decoder.decode(value);
+
+        // Append data to the text area
+        document.getElementById('replConsole').value = string;
+    }
+
+    function disconnectHandler() {
+
+        // Show "Connect"
+        document.getElementById('connectButton').innerHTML = "Connect";
+
+        // Disbale all the buttons again
+        document.getElementById('ctrlAButton').disabled = true;
+        document.getElementById('ctrlBButton').disabled = true;
+        document.getElementById('ctrlCButton').disabled = true;
+        document.getElementById('ctrlDButton').disabled = true;
+        document.getElementById('ctrlEButton').disabled = true;
+    }
+
+</script>
+
+</html>

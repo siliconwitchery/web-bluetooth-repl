@@ -1,0 +1,9 @@
+# Silicon Witchery robots file
+
+User-agent: *
+
+Disallow: .gitignore
+Disallow: /LICENSE
+Disallow: /README.md
+
+Sitemap: https://repl.siliconwitchery.com/sitemap.xml
