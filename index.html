@@ -26,6 +26,8 @@
     <script src="bluetooth.js"></script>
 </head>
 
+<!-- Page HTML content -->
+
 <body>
     <div class="app">
 
@@ -63,7 +65,17 @@
 
 </body>
 
+<!-- Javascript for interacting with the REPL console and buttons -->
 <script>
+
+    // Index of the last data we received
+    var lastCharacterIndex = 0;
+
+    // Micropython echos commands so we log them to prevent double prints
+    var echoString = "";
+
+    // Variable to indicate if control is currently pressed
+    var ctrlHeld = false;
 
     // Logic for connect/disconnect button
     document.getElementById('connectButton').addEventListener('click', function () {
@@ -106,33 +118,128 @@
 
             // If we couldn't connect, print the reason in the text area
             .catch(function (error) {
-                document.getElementById('replConsole').value = error;
+                document.getElementById('replConsole')
+                    .value = "Bluetooth error. Canceled, or couldn't connect.";
+
+                // Log error to console
+                console.error(error);
             })
     })
 
-    // Send data over Bluetooth when a return is detected in the text area
-    document.getElementById('replConsole').addEventListener()
+    // Logic for Ctrl-A button. Send a 01 command
+    document.getElementById('ctrlAButton').addEventListener('click', function () {
+        sendData("\001");
+    })
 
+    // Logic for Ctrl-B button. Send a 02 command
+    document.getElementById('ctrlBButton').addEventListener('click', function () {
+        sendData("\002");
+    })
 
-    // document.getElementById('sendButton').addEventListener('click', function () {
-    //     // Call the JSON send function and print out the formatted JSON
-    //     sendJSONData(document.getElementById('outboundJSON').value, force)
-    //         .then(function (prettyJSON) {
-    //             document.getElementById('outboundJSON').value = prettyJSON;
-    //             document.getElementById('sendButton').innerHTML = "Send <b>OK</b>";
-    //             force = false;
-    //         })
-    //         .catch(function () {
-    //             // If the JSON was invalid, print an error
-    //             document.getElementById('sendButton').innerHTML = "<b>Invalid</b> Send anyway";
-    //             force = true;
-    //         })
-    // })
+    // Logic for Ctrl-C button. Send a 03 command
+    document.getElementById('ctrlCButton').addEventListener('click', function () {
+        sendData("\003");
+    })
 
-    // Send 0x01 over bluetooth when Ctrl-A is pressed
-    // document.getElementById('ctrlAButton').addEventListener('click', function () {
-    //     document.getElementById('replConsole').value = "TODO";
-    // })
+    // Logic for Ctrl-D button. Send a 04 command
+    document.getElementById('ctrlDButton').addEventListener('click', function () {
+        sendData("\004");
+    })
+
+    // Logic for Ctrl-E button. Send a 05 command
+    document.getElementById('ctrlEButton').addEventListener('click', function () {
+        sendData("\005");
+    })
+
+    // Detect key presses in text area
+    document.getElementById('replConsole').onkeypress = (event) => {
+
+        // When Enter is pressed
+        if (event.keyCode === 13) {
+
+            // Extract text from the last sent data and the end of the line
+            var line = document.getElementById('replConsole').value
+                .substr(
+                    lastCharacterIndex,
+                    document.getElementById('replConsole').textLength)
+
+            // Send the current line over Bluetooth
+            sendData(line + "\r\n")
+
+                // If error, print to text area and console
+                .catch(function (error) {
+
+                    // Print an error
+                    document.getElementById('replConsole')
+                        .value = "Bluetooth error. Are you connected?";
+
+                    // Log error to console
+                    console.error(error);
+                });
+
+            // Save the line to the echo
+            echoString = line;
+
+            // Don't print the return here
+            event.preventDefault();
+        }
+
+        // TODO If Ctrl is pressed
+
+        // For all other input
+        else {
+
+            // If the cursor is less than the last printed data 
+            if (document.getElementById('replConsole').selectionStart
+                < lastCharacterIndex) {
+
+                // Move the cursor to the end before typing
+                document.getElementById('replConsole').selectionStart =
+                    document.getElementById('replConsole').textLength;
+            }
+        }
+    }
+
+    // Detect key holds in text area
+    document.getElementById('replConsole').onkeydown = (event) => {
+
+        // Disallow backspace before the last printed data
+        if (event.keyCode === 8 &&
+            document.getElementById('replConsole')
+                .selectionStart <= lastCharacterIndex) {
+            event.preventDefault();
+        }
+
+        // TODO If up is pressed
+        if (event.keyCode === 38) {
+            event.preventDefault();
+        }
+
+        // TODO If down is pressed
+        if (event.keyCode === 40) {
+            event.preventDefault();
+        }
+
+        // TODO If Tab is pressed
+        if (event.keyCode === 9) {
+            event.preventDefault();
+        }
+
+        // If Ctrl is held
+        if (event.keyCode === 17) {
+            ctrlHeld = true;
+            event.preventDefault();
+        }
+    }
+
+    // Handle key releases
+    document.getElementById('replConsole').onkeyup = (event) => {
+
+        // When Ctrl is released
+        if (event.keyCode === 17) {
+            ctrlHeld = false;
+        }
+    }
 
     // When data arrives, print it to the text area
     function incomingDataHandler(event) {
@@ -142,8 +249,20 @@
         let value = event.target.value;
         let string = decoder.decode(value);
 
+        // If the input string contains an echo, we trim it off
+        if (string.startsWith(echoString)) {
+            string = string.slice(echoString.length)
+        }
+
         // Append data to the text area
-        document.getElementById('replConsole').value = string;
+        document.getElementById('replConsole').value += string;
+
+        // Make sure the text area is scrolled all the way down
+        var textarea = document.getElementById('replConsole');
+        textarea.scrollTop = textarea.scrollHeight;
+
+        // Update the last character index to the latest input
+        lastCharacterIndex = textarea.textLength;
     }
 
     function disconnectHandler() {

@@ -60,38 +60,13 @@ async function connectDisconnect() {
     }
 }
 
-// Function to transmit data to the device. Takes JSON and also checks it
-async function sendJSONData(unformattedJSON, allowBadJSON) {
-    try {
-        var formattedJSON = unformattedJSON
-        var minifiedJSON = unformattedJSON;
+// Function to transmit data to the device
+async function sendData(string) {
 
-        if (!allowBadJSON) {
-            // Check if the JSON is valid
-            formattedJSON = JSON.stringify(JSON.parse(unformattedJSON), undefined, 2);
+    // Encode the string into an array
+    let encoder = new TextEncoder('utf-8');
+    let data = encoder.encode(string);
 
-            // Strip out all the whitespaces (minify) as this is what we will send
-            minifiedJSON = JSON.stringify(JSON.parse(unformattedJSON));
-        }
-
-        // If the characteristic is available, we send the JSON
-        if (downlinkCharacteristic) {
-            // Add \r and \n to start and end of string
-            minifiedJSON = ['\r', minifiedJSON, '\n'].join('');
-
-            // Encode the string to array
-            let encoder = new TextEncoder('utf-8');
-            let sendMsg = encoder.encode(minifiedJSON);
-
-            // Send the array
-            await downlinkCharacteristic.writeValue(sendMsg);
-        }
-
-        // Return formatted JSON to print
-        return Promise.resolve(formattedJSON);
-
-    } catch {
-        // Otherwise the JSON was invalid. Reject promise
-        return Promise.reject();
-    }
+    // Send the array
+    return await rxCharacteristic.writeValue(data);
 }
