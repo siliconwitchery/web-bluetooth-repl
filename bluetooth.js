@@ -67,6 +67,8 @@ async function sendData(string) {
     let encoder = new TextEncoder('utf-8');
     let data = encoder.encode(string);
 
+    // TODO Implement a way to split up the data into the available MTU size and send across multiple payloads.
+
     // Send the array
     return await rxCharacteristic.writeValue(data);
 }
