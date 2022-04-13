@@ -8,7 +8,7 @@
     <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
 
     <!-- SEO title & description -->
-    <title>Micropython Web REPL | Silicon Witchery</title>
+    <title>MicroPython Web REPL | Silicon Witchery</title>
     <meta name="description" content="Web Bluetooth based REPL for MicroPython
         running on Silicon Witchery FPGA modules.">
     <link rel="canonical" href="https://repl.siliconwitchery.com" />
@@ -16,7 +16,7 @@
     <!-- Facebook & Twitter card meta -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@SiliconWitchery" />
-    <meta property="og:title" content="Micropython Web REPL | Silicon Witchery" />
+    <meta property="og:title" content="MicroPython Web REPL | Silicon Witchery" />
     <meta property="og:description" content="Web Bluetooth based REPL for
         MicroPython running on Silicon Witchery FPGA modules." />
     <meta property="og:image" content="https://repl.siliconwitchery.com/images/share.jpg" />
@@ -26,6 +26,7 @@
     <script src="bluetooth.js"></script>
 </head>
 
+
 <!-- Page HTML content -->
 
 <body>
@@ -34,30 +35,43 @@
         <!-- Title -->
         <h1>MicroPython Web REPL</h1>
 
-        <!-- REPL box -->
+        <!-- REPL console -->
         <textarea type="text" id="replConsole" rows=20 autocomplete="off" autocorrect="off" autocapitalize="off"
-            spellcheck="false"></textarea>
+            spellcheck="false" placeholder=""></textarea>
 
         <!-- Buttons -->
         <div class="buttons">
 
             <button id="connectButton" title="Open Bluetooth connection pane">Connect</button>
-            <button id="ctrlAButton" title="Enter raw REPL mode" disabled>Ctrl-A</button>
-            <button id="ctrlBButton" title="Enter normal REPL mode" disabled>Ctrl-B</button>
-            <button id="ctrlCButton" title="Interrupt a running program" disabled>Ctrl-C</button>
-            <button id="ctrlDButton" title="Reset the device" disabled>Ctrl-D</button>
-            <button id="ctrlEButton" title="Enter paste mode" disabled>Ctrl-E</button>
+
+            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyA"
+                title="Enter raw REPL mode (Ctrl-A)" disabled>Ctrl-A</button>
+
+            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyB"
+                title="Enter normal REPL mode (Ctrl-B)" disabled>Ctrl-B</button>
+
+            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyC"
+                title="Interrupt a running program (Ctrl-C)" disabled>Ctrl-C</button>
+
+            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyD"
+                title="Reset the device (Ctrl-D)" disabled>Ctrl-D</button>
+
+            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyE"
+                title="Enter paste mode (Ctrl-E)" disabled>Ctrl-E</button>
+
+            <button name="controlButton" onclick="sendControlKey(this.value)" value="clear"
+                title="Clear console (Cmd-k or Ctrl-k)" disabled>Clear</button>
 
         </div>
 
         <!-- Footer -->
         <footer>
 
-            <p>For help and source code, visit the the
+            <p>For help, bug reporting, and source code, visit the
                 <a href="https://github.com/siliconwitchery/web-bluetooth-repl" target="_blank">repository</a>
             </p>
 
-            <p>Copyright 2022 <a href="https://www.siliconwitchery.com" target="_blank">Silicon Witchery</a></p>
+            <p>Copyright © 2022 <a href="https://www.siliconwitchery.com" target="_blank">Silicon Witchery</a></p>
 
         </footer>
 
@@ -65,48 +79,59 @@
 
 </body>
 
+
 <!-- Javascript for interacting with the REPL console and buttons -->
+
 <script>
 
-    // Index of the last data we received
+    // Text shown in the repl when there is no connection
+    const replPlaceholderText =
+        "Welcome to the MicroPython Web REPL. Connect via Bluetooth using the button below.\n\n" +
+        "Currently, only Chrome desktop supports Web Bluetooth which is used here.\n\n" +
+        "You're welcome to fork, contribute, and suggest bugfixes for this code within the repository linked below."
+
+    // Index of the last data we received. Used to prevent erasing of historical data
     var lastCharacterIndex = 0;
 
-    // Micropython echos commands so we log them to prevent double prints
+    // MicroPython echos commands so we use this variable to check and avoid echoed strings
     var echoString = "";
 
-    // Variable to indicate if control is currently pressed
-    var ctrlHeld = false;
+    // Reference to the REPL console and buttons
+    const replConsole = document.getElementById('replConsole');
+    const connectButton = document.getElementById('connectButton');
+    const controlButtons = document.getElementsByName('controlButton');
 
-    // Logic for connect/disconnect button
-    document.getElementById('connectButton').addEventListener('click', function () {
+    // Logic for connecting and disconnecting when the button is pressed
+    connectButton.addEventListener('click', function () {
 
         // Call the connectDisconnect() function
         connectDisconnect()
             .then(function (result) {
                 switch (result) {
 
-                    // When connected
+                    // If connected
                     case "connected":
 
+                        // Clear placeholder text
+                        replConsole.placeholder = "";
+
                         // Show "Disconnect"
-                        document.getElementById('connectButton').innerHTML = "Disconnect";
+                        connectButton.innerHTML = "Disconnect";
 
-                        // Enable the buttons
-                        document.getElementById('ctrlAButton').disabled = false;
-                        document.getElementById('ctrlBButton').disabled = false;
-                        document.getElementById('ctrlCButton').disabled = false;
-                        document.getElementById('ctrlDButton').disabled = false;
-                        document.getElementById('ctrlEButton').disabled = false;
+                        // Enable the control buttons
+                        controlButtons.forEach(function (ele) {
+                            ele.disabled = false;
+                        })
 
-                        // Clear the text area
-                        document.getElementById('replConsole').value = "";
+                        // Clear the REPL console
+                        replConsole.value = "";
 
-                        // Focus onto the text area
-                        document.getElementById('replConsole').focus();
+                        // Focus onto the REPL console
+                        replConsole.focus();
 
                         break;
 
-                    // When disconnected
+                    // If disconnected
                     case "disconnected":
 
                         // Run the disconnect handler
@@ -116,132 +141,204 @@
                 }
             })
 
-            // If we couldn't connect, print the reason in the text area
+            // If we couldn't connect
             .catch(function (error) {
-                document.getElementById('replConsole')
-                    .value = "Bluetooth error. Canceled, or couldn't connect. Are you using Chrome?";
+
+                // Print the reason in the REPL console
+                replConsole.value =
+                    "Bluetooth error. Canceled, or couldn't connect. Are you using Chrome?";
 
                 // Log error to console
                 console.error(error);
             })
     })
 
-    // Logic for Ctrl-A button. Send a 01 command
-    document.getElementById('ctrlAButton').addEventListener('click', function () {
-        sendData("\001");
-    })
-
-    // Logic for Ctrl-B button. Send a 02 command
-    document.getElementById('ctrlBButton').addEventListener('click', function () {
-        sendData("\002");
-    })
-
-    // Logic for Ctrl-C button. Send a 03 command
-    document.getElementById('ctrlCButton').addEventListener('click', function () {
-        sendData("\003");
-    })
-
-    // Logic for Ctrl-D button. Send a 04 command
-    document.getElementById('ctrlDButton').addEventListener('click', function () {
-        sendData("\004");
-    })
-
-    // Logic for Ctrl-E button. Send a 05 command
-    document.getElementById('ctrlEButton').addEventListener('click', function () {
-        sendData("\005");
-    })
-
-    // Detect key presses in text area
-    document.getElementById('replConsole').onkeypress = (event) => {
+    // Detect key presses in REPL console
+    replConsole.onkeypress = (event) => {
 
         // When Enter is pressed
-        if (event.keyCode === 13) {
+        if (event.code === 'Enter') {
 
             // Extract text from the last sent data and the end of the line
-            var line = document.getElementById('replConsole').value
-                .substr(
-                    lastCharacterIndex,
-                    document.getElementById('replConsole').textLength)
+            var line = replConsole.value.substr(lastCharacterIndex, replConsole.textLength)
 
             // Send the current line over Bluetooth
             sendData(line + "\r\n")
 
-                // If error, print to text area and console
+                // If error
                 .catch(function (error) {
 
-                    // Print an error
-                    document.getElementById('replConsole')
-                        .value = "Bluetooth error. Are you connected?";
+                    // Print a message in the REPL console
+                    replConsole.value = "Bluetooth error. Are you connected?";
 
-                    // Log error to console
+                    // Log error to the console
                     console.error(error);
                 });
 
-            // Save the line to the echo
+            // Save the sent data to the echoString buffer
             echoString = line;
 
-            // Don't print the return here
+            // Don't print a new line because the response contains it
             event.preventDefault();
         }
 
-        // TODO If Ctrl is pressed
-
-        // For all other input
+        // For all other inputs
         else {
 
             // If the cursor is less than the last printed data 
-            if (document.getElementById('replConsole').selectionStart
-                < lastCharacterIndex) {
+            if (replConsole.selectionStart < lastCharacterIndex) {
 
-                // Move the cursor to the end before typing
-                document.getElementById('replConsole').selectionStart =
-                    document.getElementById('replConsole').textLength;
+                // Move the cursor to the end of the REPL console before typing
+                replConsole.selectionStart = replConsole.textLength;
             }
         }
     }
 
-    // Detect key holds in text area
-    document.getElementById('replConsole').onkeydown = (event) => {
+    // Detect key holds in REPL console
+    replConsole.onkeydown = (event) => {
 
-        // Disallow backspace before the last printed data
-        if (event.keyCode === 8 &&
-            document.getElementById('replConsole')
-                .selectionStart <= lastCharacterIndex) {
+        // If Ctrl-K, or Cmd-K is pressed, clear the screen
+        if ((event.metaKey || event.ctrlKey) && event.code === 'KeyK') {
+            sendControlKey('clear');
             event.preventDefault();
         }
 
-        // TODO If up is pressed
-        if (event.keyCode === 38) {
+        // If backspace is pressed
+        if (event.code === 'Backspace') {
+
+            // Disallow backspace before the last printed data
+            if (replConsole.selectionStart <= lastCharacterIndex) {
+                event.preventDefault();
+            }
+
+            // If Cmd, or Ctrl is held, only delete until the last printed data
+            else if (event.metaKey === true || event.ctrlKey === true) {
+                replConsole.value = replConsole.value.slice(0, lastCharacterIndex);
+                event.preventDefault();
+            }
+        }
+
+        // If up is pressed
+        if (event.code === 'ArrowUp') {
+            sendControlKey('ArrowUp');
             event.preventDefault();
         }
 
-        // TODO If down is pressed
-        if (event.keyCode === 40) {
+        // If down is pressed
+        if (event.code === 'ArrowDown') {
+            sendControlKey('ArrowDown');
             event.preventDefault();
         }
 
-        // TODO If Tab is pressed
-        if (event.keyCode === 9) {
+        // If Tab is pressed
+        if (event.code === 'Tab') {
+            sendControlKey('Tab');
             event.preventDefault();
         }
 
         // If Ctrl is held
-        if (event.keyCode === 17) {
-            ctrlHeld = true;
-            event.preventDefault();
+        if (event.ctrlKey) {
+            switch (event.code) {
+
+                // In the case of Ctrl-A
+                case 'KeyA':
+                    sendControlKey('KeyA');
+                    event.preventDefault();
+                    break;
+
+                // In the case of Ctrl-B
+                case 'KeyB':
+                    sendControlKey('KeyB');
+                    event.preventDefault();
+                    break;
+
+                // In the case of Ctrl-C
+                case 'KeyC':
+                    sendControlKey('KeyC');
+                    event.preventDefault();
+                    break;
+
+                // In the case of Ctrl-D
+                case 'KeyD':
+                    sendControlKey('KeyD');
+                    event.preventDefault();
+                    break;
+
+                // In the case of Ctrl-E
+                case 'KeyE':
+                    sendControlKey('KeyE');
+                    event.preventDefault();
+                    break;
+            }
         }
     }
 
-    // Handle key releases
-    document.getElementById('replConsole').onkeyup = (event) => {
+    // Send control sequences over bluetooth
+    function sendControlKey(value) {
 
-        // When Ctrl is released
-        if (event.keyCode === 17) {
-            ctrlHeld = false;
+        switch (value) {
+
+            // In the case of Ctrl-A, send 01
+            case 'KeyA':
+                sendData("\001");
+                break;
+
+            // In the case of Ctrl-B, send 02
+            case 'KeyB':
+                sendData("\002");
+                break;
+
+            // In the case of Ctrl-C, send 03
+            case 'KeyC':
+                sendData("\003");
+                break;
+
+            // In the case of Ctrl-D, send 04
+            case 'KeyD':
+                sendData("\004");
+                break;
+
+            // In the case of Ctrl-E, send 05
+            case 'KeyE':
+                sendData("\005");
+                break;
+
+            // In the case of clearing the console
+            case 'clear':
+
+                // Clear the console
+                replConsole.value = "";
+
+                // Reset the last character index
+                lastCharacterIndex = 0;
+
+                // Send a newline to get a new prompt marker 
+                sendData("\r\n");
+
+                break;
+
+            // Scroll up through history
+            case 'ArrowUp':
+                // TODO
+                break;
+
+            // Scroll down through history
+            case 'ArrowDown':
+                // TODO
+                break;
+
+            // Send autocomplete command
+            case 'Tab':
+                // TODO
+                break;
+
+            default:
+                console.error(value + " not handled.");
+                break;
         }
     }
 
-    // When data arrives, print it to the text area
+    // When data arrives over bluetooth
     function incomingDataHandler(event) {
 
         // Decode the byte array into a string
@@ -254,29 +351,32 @@
             string = string.slice(echoString.length)
         }
 
-        // Append data to the text area
-        document.getElementById('replConsole').value += string;
+        // Append data to the REPL console
+        replConsole.value += string;
 
-        // Make sure the text area is scrolled all the way down
-        var textarea = document.getElementById('replConsole');
-        textarea.scrollTop = textarea.scrollHeight;
+        // Make sure the REPL console is scrolled all the way down
+        replConsole.scrollTop = replConsole.scrollHeight;
 
-        // Update the last character index to the latest input
-        lastCharacterIndex = textarea.textLength;
+        // Update the last character index to the total length of the REPL console
+        lastCharacterIndex = replConsole.textLength;
     }
 
+    // When a disconnect event occurs
     function disconnectHandler() {
 
         // Show "Connect"
-        document.getElementById('connectButton').innerHTML = "Connect";
+        connectButton.innerHTML = "Connect";
 
-        // Disbale all the buttons again
-        document.getElementById('ctrlAButton').disabled = true;
-        document.getElementById('ctrlBButton').disabled = true;
-        document.getElementById('ctrlCButton').disabled = true;
-        document.getElementById('ctrlDButton').disabled = true;
-        document.getElementById('ctrlEButton').disabled = true;
+        // Disable all the buttons again
+        controlButtons.forEach(function (ele) {
+            ele.disabled = true;
+        })
     }
+
+    // On page load
+    window.addEventListener("load", (event) => {
+        replConsole.placeholder = replPlaceholderText;
+    });
 
 </script>
 
