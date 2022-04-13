@@ -144,6 +144,9 @@
                 // Print the reason in the REPL console
                 replConsole.value = "Bluetooth error. Canceled, or couldn't connect. Are you using Chrome?";
 
+                // Reset the last character index
+                lastCharacterIndex = replConsole.textLength;
+
                 // Log error to console
                 console.error(error);
             })
@@ -166,6 +169,9 @@
 
                     // Print a message in the REPL console
                     replConsole.value = "Bluetooth error. Are you connected?";
+
+                    // Reset the print last character index
+                    lastCharacterIndex = replConsole.textLength;
 
                     // Log error to the console
                     console.error(error);
