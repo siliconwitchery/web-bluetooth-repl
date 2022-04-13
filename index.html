@@ -9,16 +9,16 @@
 
     <!-- SEO title & description -->
     <title>MicroPython Web REPL | Silicon Witchery</title>
-    <meta name="description" content="Web Bluetooth based REPL for MicroPython
-        running on Silicon Witchery FPGA modules.">
+    <meta name="description"
+        content="Web Bluetooth based REPL for MicroPython running on Silicon Witchery FPGA modules.">
     <link rel="canonical" href="https://repl.siliconwitchery.com" />
 
     <!-- Facebook & Twitter card meta -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@SiliconWitchery" />
     <meta property="og:title" content="MicroPython Web REPL | Silicon Witchery" />
-    <meta property="og:description" content="Web Bluetooth based REPL for
-        MicroPython running on Silicon Witchery FPGA modules." />
+    <meta property="og:description"
+        content="Web Bluetooth based REPL for MicroPython running on Silicon Witchery FPGA modules." />
     <meta property="og:image" content="https://repl.siliconwitchery.com/images/share.jpg" />
     <meta property="og:url" content="https://repl.siliconwitchery.com" />
     <meta property="og:type" content="website" />
@@ -44,23 +44,23 @@
 
             <button id="connectButton" title="Open Bluetooth connection pane">Connect</button>
 
-            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyA"
-                title="Enter raw REPL mode (Ctrl-A)" disabled>Ctrl-A</button>
+            <button value="KeyA" title="Enter raw REPL mode (Ctrl-A)" onclick="sendControlKey(this.value)"
+                name="controlButton" disabled>Ctrl-A</button>
 
-            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyB"
-                title="Enter normal REPL mode (Ctrl-B)" disabled>Ctrl-B</button>
+            <button value="KeyB" title="Enter normal REPL mode (Ctrl-B)" onclick="sendControlKey(this.value)"
+                name="controlButton" disabled>Ctrl-B</button>
 
-            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyC"
-                title="Interrupt a running program (Ctrl-C)" disabled>Ctrl-C</button>
+            <button value="KeyC" title="Interrupt a running program (Ctrl-C)" onclick="sendControlKey(this.value)"
+                name="controlButton" disabled>Ctrl-C</button>
 
-            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyD"
-                title="Reset the device (Ctrl-D)" disabled>Ctrl-D</button>
+            <button value="KeyD" title="Reset the device (Ctrl-D)" onclick="sendControlKey(this.value)"
+                name="controlButton" disabled>Ctrl-D</button>
 
-            <button name="controlButton" onclick="sendControlKey(this.value)" value="KeyE"
-                title="Enter paste mode (Ctrl-E)" disabled>Ctrl-E</button>
+            <button value="KeyE" title="Enter paste mode (Ctrl-E)" onclick="sendControlKey(this.value)"
+                name="controlButton" disabled>Ctrl-E</button>
 
-            <button name="controlButton" onclick="sendControlKey(this.value)" value="clear"
-                title="Clear console (Cmd-k or Ctrl-k)" disabled>Clear</button>
+            <button value="clear" title="Clear console (Cmd-k or Ctrl-k)" onclick="sendControlKey(this.value)"
+                name="clearButton">Clear</button>
 
         </div>
 
@@ -84,17 +84,14 @@
 
 <script>
 
+    // This marker indexes the last character we received. Anything after it, is new, unsent data
+    var lastCharacterIndex = 0;
+
     // Text shown in the repl when there is no connection
     const replPlaceholderText =
         "Welcome to the MicroPython Web REPL. Connect via Bluetooth using the button below.\n\n" +
         "Currently, only Chrome desktop supports Web Bluetooth which is used here.\n\n" +
         "You're welcome to fork, contribute, and suggest bugfixes for this code within the repository linked below."
-
-    // Index of the last data we received. Used to prevent erasing of historical data
-    var lastCharacterIndex = 0;
-
-    // MicroPython echos commands so we use this variable to check and avoid echoed strings
-    var echoString = "";
 
     // Reference to the REPL console and buttons
     const replConsole = document.getElementById('replConsole');
@@ -145,8 +142,7 @@
             .catch(function (error) {
 
                 // Print the reason in the REPL console
-                replConsole.value =
-                    "Bluetooth error. Canceled, or couldn't connect. Are you using Chrome?";
+                replConsole.value = "Bluetooth error. Canceled, or couldn't connect. Are you using Chrome?";
 
                 // Log error to console
                 console.error(error);
@@ -159,13 +155,13 @@
         // When Enter is pressed
         if (event.code === 'Enter') {
 
-            // Extract text from the last sent data and the end of the line
-            var line = replConsole.value.substr(lastCharacterIndex, replConsole.textLength)
+            // Extract all text from the last sent marker, to and the end of the string. This includes multiple lines
+            var line = replConsole.value.slice(lastCharacterIndex);
 
-            // Send the current line over Bluetooth
+            // Send the data over Bluetooth, and add the CRLF
             sendData(line + "\r\n")
 
-                // If error
+                // If an error occurs
                 .catch(function (error) {
 
                     // Print a message in the REPL console
@@ -178,11 +174,11 @@
             // Save the sent data to the echoString buffer
             echoString = line;
 
-            // Don't print a new line because the response contains it
+            // Don't print a new line because the response will print it for us
             event.preventDefault();
         }
 
-        // For all other inputs
+        // For all other character inputs
         else {
 
             // If the cursor is less than the last printed data 
@@ -194,7 +190,7 @@
         }
     }
 
-    // Detect key holds in REPL console
+    // Detect key holds in REPL console. This includes special keys like Tab, Ctrl, and Backspace
     replConsole.onkeydown = (event) => {
 
         // If Ctrl-K, or Cmd-K is pressed, clear the screen
@@ -206,14 +202,25 @@
         // If backspace is pressed
         if (event.code === 'Backspace') {
 
-            // Disallow backspace before the last printed data
-            if (replConsole.selectionStart <= lastCharacterIndex) {
+            // If Cmd-Backspace, or Ctrl-Backspace is pressed, we want to clear the whole line
+            if (event.metaKey === true || event.ctrlKey === true) {
+
+                // Delete everything from the end of the string, to the last data marker
+                replConsole.value = replConsole.value.slice(0, lastCharacterIndex);
+
+                // Avoid extra actions in the REPL console
                 event.preventDefault();
             }
 
-            // If Cmd, or Ctrl is held, only delete until the last printed data
-            else if (event.metaKey === true || event.ctrlKey === true) {
-                replConsole.value = replConsole.value.slice(0, lastCharacterIndex);
+            // Disallow backspace before the last printed data
+            else if (replConsole.selectionStart < lastCharacterIndex) {
+                event.preventDefault();
+            }
+
+            // If we're on the last printed index, then we pass the Backspace over Bluetooth. This will return the
+            // appropriate action for erasing tabs, or autocomplete characters
+            else if (replConsole.selectionStart == lastCharacterIndex) {
+                sendControlKey('Backspace');
                 event.preventDefault();
             }
         }
@@ -306,30 +313,35 @@
             // In the case of clearing the console
             case 'clear':
 
-                // Clear the console
-                replConsole.value = "";
+                // Find the index where the last newline that was received
+                from = replConsole.value.search(/(\n)(?!.*\1)/g) + 1;
 
-                // Reset the last character index
-                lastCharacterIndex = 0;
+                // Trim from there, to the last character which was received
+                replConsole.value = replConsole.value.slice(from, lastCharacterIndex);
 
-                // Send a newline to get a new prompt marker 
-                sendData("\r\n");
+                // Update the new index to only include characters printed on screen
+                lastCharacterIndex = replConsole.textLength;
 
                 break;
 
             // Scroll up through history
             case 'ArrowUp':
-                // TODO
+                sendData("\x1B[A");
                 break;
 
             // Scroll down through history
             case 'ArrowDown':
-                // TODO
+                sendData("\x1B[B");
                 break;
 
-            // Send autocomplete command
+            // Send Tab command for indentation or autocomplete
             case 'Tab':
-                // TODO
+                sendData("\x09");
+                break;
+
+            // Send backspace command
+            case 'Backspace':
+                sendData("\x08");
                 break;
 
             default:
@@ -346,19 +358,42 @@
         let value = event.target.value;
         let string = decoder.decode(value);
 
-        // If the input string contains an echo, we trim it off
-        if (string.startsWith(echoString)) {
-            string = string.slice(echoString.length)
+        console.log(value.buffer);
+        console.log(string);
+
+        // We don't need to handle the  ESC-[K sequence so we remove it
+        string = string.replaceAll('\x1B[K', '');
+
+        // Count any '\b' characters which are received
+        var backspaces = string.split("\b").length - 1;
+
+        // Strip out backspaces now that we've counted them
+        string = string.replaceAll('\b', '');
+
+        // Look for escape sequence for moving the cursor left
+        cursorLeft = string.match(/\x1B\[\d+D/);
+
+        // If it exists
+        if (cursorLeft != null) {
+
+            // Increment the backspaces by the number in the sequence
+            backspaces += parseInt(cursorLeft[0].match(/(\d+)(?!.*\1)/g)[0]);
+
+            // Remove the escape sequence from the string now that we've counted it
+            string = string.replaceAll(cursorLeft[0], '');
         }
+
+        // Delete characters from the REPL consoles according to the backspace value
+        replConsole.value = replConsole.value.slice(0, lastCharacterIndex - backspaces);
 
         // Append data to the REPL console
         replConsole.value += string;
 
-        // Make sure the REPL console is scrolled all the way down
-        replConsole.scrollTop = replConsole.scrollHeight;
-
         // Update the last character index to the total length of the REPL console
         lastCharacterIndex = replConsole.textLength;
+
+        // Make sure the REPL console is scrolled all the way down
+        replConsole.scrollTop = replConsole.scrollHeight;
     }
 
     // When a disconnect event occurs
