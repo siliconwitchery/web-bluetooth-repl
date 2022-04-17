@@ -85,7 +85,7 @@
 <script>
 
     // This marker indexes the last character we received. Anything after it, is new, unsent data
-    var lastCharacterIndex = 0;
+    let lastCharacterIndex = 0;
 
     // Text shown in the repl when there is no connection
     const replPlaceholderText =
@@ -159,7 +159,7 @@
         if (event.code === 'Enter') {
 
             // Extract all text from the last sent marker, to and the end of the string. This includes multiple lines
-            var line = replConsole.value.slice(lastCharacterIndex);
+            let line = replConsole.value.slice(lastCharacterIndex);
 
             // Send the data over Bluetooth, and add the CRLF
             sendData(line + "\r\n")
@@ -371,7 +371,7 @@
         string = string.replaceAll('\x1B[K', '');
 
         // Count any '\b' characters which are received
-        var backspaces = string.split("\b").length - 1;
+        let backspaces = string.split("\b").length - 1;
 
         // Strip out backspaces now that we've counted them
         string = string.replaceAll('\b', '');

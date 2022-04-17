@@ -1,12 +1,12 @@
 // Global device and characteristic objects
-var device = null;
-var rxCharacteristic = null;
-var txCharacteristic = null;
+let device = null;
+let rxCharacteristic = null;
+let txCharacteristic = null;
 
 // UUIDs for services and characteristics
-var nordicUARTServiceUUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-var rxCharacteristicUUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-var txCharacteristicUUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+let nordicUARTServiceUUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+let rxCharacteristicUUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+let txCharacteristicUUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
 // Promise function to check if bluetooth is available on the browser
 function isWebBluetoothAvailable() {
