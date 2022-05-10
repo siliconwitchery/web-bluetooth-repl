@@ -364,8 +364,11 @@
         let value = event.target.value;
         let string = decoder.decode(value);
 
-        console.log(value.buffer);
-        console.log(string);
+        // TODO figure out a way to edit historical strings
+
+        // TODO remove after debugging
+        // console.log(value.buffer);
+        // console.log(string);
 
         // We don't need to handle the  ESC-[K sequence so we remove it
         string = string.replaceAll('\x1B[K', '');

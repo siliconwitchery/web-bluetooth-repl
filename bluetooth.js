@@ -8,6 +8,9 @@ let nordicUARTServiceUUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 let rxCharacteristicUUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 let txCharacteristicUUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
+// Busy flag to avoid multiple transmits
+let busy = false;
+
 // Promise function to check if bluetooth is available on the browser
 function isWebBluetoothAvailable() {
     return new Promise((resolve, reject) => {
@@ -63,12 +66,30 @@ async function connectDisconnect() {
 // Function to transmit data to the device
 async function sendData(string) {
 
+    // Don't do anything if busy
+    if (busy) { return }
+
+    // Mark transmit as busy
+    busy = true;
+
     // Encode the string into an array
     let encoder = new TextEncoder('utf-8');
     let data = encoder.encode(string);
 
-    // TODO Implement a way to split up the data into the available MTU size and send across multiple payloads.
+    // The MTU size. TODO can we figure this out dynamically?
+    let mtu = 128 - 3;
 
-    // Send the array
-    return await rxCharacteristic.writeValue(data);
+    // Break the string up into mtu sized packets
+    for (let chunk = 0; chunk < Math.ceil(data.length / mtu); chunk++) {
+
+        // Calculate the start and end according to the chunk number
+        let start = mtu * chunk;
+        let end = mtu * (chunk + 1);
+
+        // Send each slice of data (the partial last chunk is safely handled with slice)
+        await rxCharacteristic.writeValue(data.slice(start, end));
+    }
+
+    // Mark transmit as ready
+    busy = false;
 }
