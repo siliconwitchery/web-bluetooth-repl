@@ -39,6 +39,7 @@ body {
 textarea {
     font-family: 'Roboto Mono', monospace;
     padding: 1rem;
+    margin-top: 1rem;
     resize: vertical;
     background-color: var(--textbox-color);
 }
@@ -48,6 +49,10 @@ h1 {
     margin-bottom: 1rem;
     text-transform: capitalize;
     letter-spacing: 0.08rem;
+}
+
+b {
+    font-weight: 700;
 }
 
 a {
@@ -92,7 +97,7 @@ footer {
 }
 
 p {
-    font-size: x-small;
+    font-size: small;
 }
 
 a {
