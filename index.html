@@ -68,7 +68,7 @@
             <button value="KeyE" title="Enter paste mode (Ctrl-E)" onclick="sendControlKey(this.value)"
                 name="controlButton" disabled>Ctrl-E</button>
 
-            <button value="clear" title="Clear console (Cmd-k or Ctrl-k)" onclick="sendControlKey(this.value)"
+            <button value="Clear" title="Clear console (Cmd-k or Ctrl-k)" onclick="sendControlKey(this.value)"
                 name="clearButton">Clear</button>
 
         </div>
@@ -91,9 +91,6 @@
 <!-- Javascript for interacting with the REPL console and buttons -->
 <script>
 
-    // This marker indexes the last character we received. Anything after it, is new, unsent data
-    let lastCharacterIndex = 0;
-
     // Text shown in the repl when there is no connection
     const replPlaceholderText =
         "Welcome to the MicroPython Web REPL. Connect via Bluetooth using the button below.\n\n" +
@@ -104,6 +101,9 @@
     const replConsole = document.getElementById('replConsole');
     const connectButton = document.getElementById('connectButton');
     const controlButtons = document.getElementsByName('controlButton');
+
+    // Variable for keeping track of the current cursor position
+    let cursorPosition = 0;
 
     // Logic for connecting and disconnecting when the button is pressed
     connectButton.addEventListener('click', function () {
@@ -127,8 +127,14 @@
                             ele.disabled = false;
                         })
 
-                        // Clear the REPL console
-                        replConsole.value = "";
+                        // Append "connected" to the console
+                        replConsole.value = replConsole.value + "\nConnected";
+
+                        // Move the cursor forward
+                        cursorPosition += "\nConnected".length;
+
+                        // Reset the REPL
+                        sendControlKey('KeyC');
 
                         // Focus onto the REPL console
                         replConsole.focus();
@@ -137,6 +143,12 @@
 
                     // If disconnected
                     case "disconnected":
+
+                        // Append "disconnected" to the console
+                        replConsole.value = replConsole.value + "\nDisconnected";
+
+                        // Move the cursor forward
+                        cursorPosition += "\nDisconnected".length;
 
                         // Run the disconnect handler
                         disconnectHandler();
@@ -148,8 +160,11 @@
             // If we couldn't connect
             .catch(function (error) {
 
-                // Print the reason in the REPL console
-                replConsole.value = "Bluetooth error. Canceled, or couldn't connect. Are you using Chrome?";
+                // Append a message to the console
+                replConsole.value = replConsole.value + "\nCanceled, or couldn't connect. Are you using Chrome?";
+
+                // Move the cursor forward
+                cursorPosition += "\nCanceled, or couldn't connect. Are you using Chrome?".length;
 
                 // Reset the last character index
                 lastCharacterIndex = replConsole.textLength;
@@ -162,45 +177,32 @@
     // Detect key presses in REPL console
     replConsole.onkeypress = (event) => {
 
-        // When Enter is pressed
-        if (event.code === 'Enter') {
+        let key = event.key;
 
-            // Extract all text from the last sent marker, to and the end of the string. This includes multiple lines
-            let line = replConsole.value.slice(lastCharacterIndex);
+        // If Enter is pressed, replace it with CRLF
+        if (key === 'Enter') {
 
-            // Send the data over Bluetooth, and add the CRLF
-            sendData(line + "\r\n")
-
-                // If an error occurs
-                .catch(function (error) {
-
-                    // Print a message in the REPL console
-                    replConsole.value = "Bluetooth error. Are you connected?";
-
-                    // Reset the print last character index
-                    lastCharacterIndex = replConsole.textLength;
-
-                    // Log error to the console
-                    console.error(error);
-                });
-
-            // Save the sent data to the echoString buffer
-            echoString = line;
-
-            // Don't print a new line because the response will print it for us
-            event.preventDefault();
+            key = "\r\n";
         }
 
-        // For all other character inputs
-        else {
+        // Send the keypress
+        sendData(key)
 
-            // If the cursor is less than the last printed data 
-            if (replConsole.selectionStart < lastCharacterIndex) {
+            // If an error occurs
+            .catch(function (error) {
 
-                // Move the cursor to the end of the REPL console before typing
-                replConsole.selectionStart = replConsole.textLength;
-            }
-        }
+                // Print a message in the REPL console
+                replConsole.value = replConsole.value + "\nBluetooth error. Are you connected?";
+
+                // Move the cursor forward
+                cursorPosition += "\nBluetooth error. Are you connected?".length;
+
+                // Log error to the console
+                console.error(error);
+            });
+
+        // Don't print characters because the response will print it for us
+        event.preventDefault();
     }
 
     // Detect key holds in REPL console. This includes special keys like Tab, Ctrl, and Backspace
@@ -208,34 +210,14 @@
 
         // If Ctrl-K, or Cmd-K is pressed, clear the screen
         if ((event.metaKey || event.ctrlKey) && event.code === 'KeyK') {
-            sendControlKey('clear');
+            sendControlKey('Clear');
             event.preventDefault();
         }
 
         // If backspace is pressed
         if (event.code === 'Backspace') {
-
-            // If Cmd-Backspace, or Ctrl-Backspace is pressed, we want to clear the whole line
-            if (event.metaKey === true || event.ctrlKey === true) {
-
-                // Delete everything from the end of the string, to the last data marker
-                replConsole.value = replConsole.value.slice(0, lastCharacterIndex);
-
-                // Avoid extra actions in the REPL console
-                event.preventDefault();
-            }
-
-            // Disallow backspace before the last printed data
-            else if (replConsole.selectionStart < lastCharacterIndex) {
-                event.preventDefault();
-            }
-
-            // If we're on the last printed index, then we pass the Backspace over Bluetooth. This will return the
-            // appropriate action for erasing tabs, or autocomplete characters
-            else if (replConsole.selectionStart == lastCharacterIndex) {
-                sendControlKey('Backspace');
-                event.preventDefault();
-            }
+            sendControlKey('Backspace');
+            event.preventDefault();
         }
 
         // If up is pressed
@@ -247,6 +229,18 @@
         // If down is pressed
         if (event.code === 'ArrowDown') {
             sendControlKey('ArrowDown');
+            event.preventDefault();
+        }
+
+        // If right is pressed
+        if (event.code === 'ArrowRight') {
+            sendControlKey('ArrowRight');
+            event.preventDefault();
+        }
+
+        // If left is pressed
+        if (event.code === 'ArrowLeft') {
+            sendControlKey('ArrowLeft');
             event.preventDefault();
         }
 
@@ -324,17 +318,10 @@
                 break;
 
             // In the case of clearing the console
-            case 'clear':
-
-                // Find the index where the last newline that was received
-                from = replConsole.value.search(/(\n)(?!.*\1)/g) + 1;
-
-                // Trim from there, to the last character which was received
-                replConsole.value = replConsole.value.slice(from, lastCharacterIndex);
-
-                // Update the new index to only include characters printed on screen
-                lastCharacterIndex = replConsole.textLength;
-
+            case 'Clear':
+                replConsole.value = "";
+                cursorPosition = 0;
+                sendData("\003");
                 break;
 
             // Scroll up through history
@@ -345,6 +332,16 @@
             // Scroll down through history
             case 'ArrowDown':
                 sendData("\x1B[B");
+                break;
+
+            // Move cursor right
+            case 'ArrowRight':
+                sendData("\x1B[C");
+                break;
+
+            // Move cursor left
+            case 'ArrowLeft':
+                sendData("\x1B[D");
                 break;
 
             // Send Tab command for indentation or autocomplete
@@ -371,42 +368,68 @@
         let value = event.target.value;
         let string = decoder.decode(value);
 
-        // TODO figure out a way to edit historical strings
+        // For every character in the incoming string (i is incremented internally)
+        for (let i = 0; i < string.length;) {
 
-        // TODO remove after debugging
-        // console.log(value.buffer);
-        // console.log(string);
+            // Check if there's a backspace character at the current position
+            if (string.indexOf('\b', i) == i) {
 
-        // We don't need to handle the  ESC-[K sequence so we remove it
-        string = string.replaceAll('\x1B[K', '');
+                // Move the cursor back by one space
+                cursorPosition--;
 
-        // Count any '\b' characters which are received
-        let backspaces = string.split("\b").length - 1;
+                // Skip past the backspace character
+                i += '\b'.length;
+            }
 
-        // Strip out backspaces now that we've counted them
-        string = string.replaceAll('\b', '');
+            // Check if there is a carriage return at the current position
+            else if (string.indexOf('\r', i) == i) {
 
-        // Look for escape sequence for moving the cursor left
-        cursorLeft = string.match(/\x1B\[\d+D/);
+                // Skip past the carriage return character
+                i += '\r'.length;
+            }
 
-        // If it exists
-        if (cursorLeft != null) {
+            // Check if there's an ESC-[K sequence at the current position
+            else if (string.indexOf('\x1B[K', i) == i) {
 
-            // Increment the backspaces by the number in the sequence
-            backspaces += parseInt(cursorLeft[0].match(/(\d+)(?!.*\1)/g)[0]);
+                // Remove everything from the cursor to the end of the string
+                replConsole.value = replConsole.value.slice(0, cursorPosition);
 
-            // Remove the escape sequence from the string now that we've counted it
-            string = string.replaceAll(cursorLeft[0], '');
+                // Skip ahead past the ESC-[K
+                i += '\x1B[K'.length;
+            }
+
+            // Check if there's an ESC-[nD sequence at the current position
+            else if (string.slice(i).search(/\x1B\[\d+D/) == 0) {
+
+                // Extract the number of spaces to move
+                let backspaces = parseInt(string.slice(i).match(/(\d+)(?!.*\1)/g));
+
+                // Move the cursor back that many spaces
+                cursorPosition -= backspaces;
+
+                // Skip ahead past the ESC-[nD
+                i += '\x1B[D'.length + String(backspaces).length;
+            }
+
+            // Otherwise for all other characters
+            else {
+
+                // Append the output with the new character
+                replConsole.value = replConsole.value.slice(0, cursorPosition)
+                    + string[i]
+                    + replConsole.value.slice(cursorPosition + 1);
+
+                // Move the cursor forward by one space
+                cursorPosition++;
+
+                // Skip one character
+                i++;
+            }
         }
 
-        // Delete characters from the REPL consoles according to the backspace value
-        replConsole.value = replConsole.value.slice(0, lastCharacterIndex - backspaces);
-
-        // Append data to the REPL console
-        replConsole.value += string;
-
-        // Update the last character index to the total length of the REPL console
-        lastCharacterIndex = replConsole.textLength;
+        // Reposition the cursor
+        replConsole.selectionEnd = cursorPosition;
+        replConsole.selectionStart = cursorPosition;
 
         // Make sure the REPL console is scrolled all the way down
         replConsole.scrollTop = replConsole.scrollHeight;
