@@ -53,23 +53,23 @@
 
             <button id="connectButton" title="Open Bluetooth connection pane">Connect</button>
 
-            <button value="KeyA" title="Enter raw REPL mode (Ctrl-A)" onclick="sendControlKey(this.value);
-            replConsole.focus()" name="controlButton" disabled>Ctrl-A</button>
+            <button onclick="sendData('\x01'); replConsole.focus()" name="controlButton" disabled
+                title="Enter raw REPL mode (Ctrl-A)">Ctrl-A</button>
 
-            <button value="KeyB" title="Enter normal REPL mode (Ctrl-B)" onclick="sendControlKey(this.value);
-            replConsole.focus()" name="controlButton" disabled>Ctrl-B</button>
+            <button onclick="sendData('\x02'); replConsole.focus()" name="controlButton" disabled
+                title="Enter normal REPL mode (Ctrl-B)">Ctrl-B</button>
 
-            <button value="KeyC" title="Interrupt a running program (Ctrl-C)" onclick="sendControlKey(this.value);
-            replConsole.focus()" name="controlButton" disabled>Ctrl-C</button>
+            <button onclick="sendData('\x03'); replConsole.focus()" name="controlButton" disabled
+                title="Interrupt a running program (Ctrl-C)">Ctrl-C</button>
 
-            <button value="KeyD" title="Reset the device (Ctrl-D)" onclick="sendControlKey(this.value);
-            replConsole.focus()" name="controlButton" disabled>Ctrl-D</button>
+            <button onclick="sendData('\x04'); replConsole.focus()" name="controlButton" disabled
+                title="Reset the device (Ctrl-D)">Ctrl-D</button>
 
-            <button value="KeyE" title="Enter paste mode (Ctrl-E)" onclick="sendControlKey(this.value);
-            replConsole.focus()" name="controlButton" disabled>Ctrl-E</button>
+            <button onclick="sendData('\x05'); replConsole.focus()" name="controlButton" disabled
+                title="Enter paste mode (Ctrl-E)">Ctrl-E</button>
 
-            <button value="Clear" title="Clear console (Cmd-k or Ctrl-k)" onclick="sendControlKey(this.value);
-            replConsole.focus()" name="clearButton">Clear</button>
+            <button onclick="replConsole.value = ''; cursorPosition = 0; sendData('\x03');replConsole.focus()"
+                title="Clear console (Cmd-k or Ctrl-k)">Clear</button>
 
         </div>
 
@@ -141,7 +141,7 @@
                         cursorPosition += "\nConnected".length;
 
                         // Send Ctrl-C to the device
-                        sendControlKey('KeyC');
+                        sendData("\x03");
 
                         // Focus the cursor to the REPL console
                         replConsole.focus();
@@ -216,152 +216,210 @@
 
         // If Ctrl is held
         if (event.ctrlKey) {
-            switch (event.code) {
+            switch (event.key) {
 
                 // In the case of Ctrl-A
-                case 'KeyA':
+                case 'a':
 
-                    // Send Ctrl-A to the device
-                    sendControlKey('KeyA');
+                    // Send control code 01
+                    sendData("\x01");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
 
-                    break;
+                    // Return
+                    return;
 
                 // In the case of Ctrl-B
-                case 'KeyB':
+                case 'b':
 
-                    // Send Ctrl-B to the device
-                    sendControlKey('KeyB');
+                    // Send control code 02
+                    sendData("\x02");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
 
-                    break;
+                    // Return
+                    return;
 
                 // In the case of Ctrl-C
-                case 'KeyC':
+                case 'c':
 
-                    // Send Ctrl-C to the device
-                    sendControlKey('KeyC');
+                    // Send control code 03
+                    sendData("\x03");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
 
-                    break;
+                    // Return
+                    return;
 
                 // In the case of Ctrl-D
-                case 'KeyD':
+                case 'd':
 
-                    // Send Ctrl-D to the device
-                    sendControlKey('KeyD');
+                    // Send control code 04
+                    sendData("\x04");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
 
-                    break;
+                    // Return
+                    return;
 
                 // In the case of Ctrl-E
-                case 'KeyE':
+                case 'e':
 
-                    // Send Ctrl-E to the device
-                    sendControlKey('KeyE');
-
-                    // Prevent any action in the REPL console
-                    event.preventDefault();
-
-                    break;
-
-                // In the case of Ctrl-K
-                case 'KeyK':
-
-                    // Issue the clear screen sequence
-                    sendControlKey('Clear');
+                    // Send control code 05
+                    sendData("\x05");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
 
-                    break;
+                    // Return
+                    return;
             }
         }
 
         // If the meta/command key is held
         if (event.metaKey) {
-            switch (event.code) {
+            switch (event.key) {
 
                 // In the case of Meta-K or Meta-backspace
-                case 'KeyK':
-                case 'Backspace':
+                case 'k':
 
-                    // Issue the clear screen sequence
-                    sendControlKey('Clear');
+                    // Clear the console
+                    replConsole.value = "";
+
+                    // Reset the cursor position to zero
+                    cursorPosition = 0;
+
+                    // Send control code 03 to reset the REPL
+                    sendData("\x03");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
 
-                    break;
+                    // Return
+                    return;
+
+                // In the case of Meta-backspace
+                case 'Backspace':
+
+                    // Send a bunch of backspaces to clear the whole line
+                    sendData("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+
+                    // Prevent any action in the REPL console
+                    event.preventDefault();
+
+                    // Return
+                    return;
+
+                // In the case of Meta-right
+                case 'ArrowRight':
+
+                    // Send a bunch of right arrow keys
+                    sendData("\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
+                        "\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
+                        "\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C");
+
+                    // Prevent any action in the REPL console
+                    event.preventDefault();
+
+                    // Return
+                    return;
+
+                // In the case of Meta-left
+                case 'ArrowLeft':
+
+                    // Send a bunch of left arrow keys
+                    sendData("\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
+                        "\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
+                        "\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D");
+
+                    // Prevent any action in the REPL console
+                    event.preventDefault();
+
+                    // Return
+                    return;
             }
         }
 
         // If backspace is pressed
-        if (event.code === 'Backspace') {
+        if (event.key === 'Backspace') {
 
-            // Send a backspace to the device
-            sendControlKey('Backspace');
+            // Send control code 08
+            sendData("\x08");
 
             // Prevent any action in the REPL console
             event.preventDefault();
+
+            // Return
+            return;
         }
 
         // If up is pressed
-        if (event.code === 'ArrowUp') {
+        if (event.key === 'ArrowUp') {
 
-            // Send an up arrow sequence to the device
-            sendControlKey('ArrowUp');
+            // Send control sequence ESC-[A
+            sendData("\x1B[A");
 
             // Prevent any action in the REPL console
             event.preventDefault();
+
+            // Return
+            return;
         }
 
         // If down is pressed
-        if (event.code === 'ArrowDown') {
+        if (event.key === 'ArrowDown') {
 
-            // Send a down arrow sequence to the device
-            sendControlKey('ArrowDown');
+            // Send control sequence ESC-[B
+            sendData("\x1B[B");
 
             // Prevent any action in the REPL console
             event.preventDefault();
+
+            // Return
+            return;
         }
 
         // If right is pressed
-        if (event.code === 'ArrowRight') {
+        if (event.key === 'ArrowRight') {
 
-            // Send a right arrow sequence to the device
-            sendControlKey('ArrowRight');
+            // Send control sequence ESC-[C
+            sendData("\x1B[C");
 
             // Prevent any action in the REPL console
             event.preventDefault();
+
+            // Return
+            return;
         }
 
         // If left is pressed
-        if (event.code === 'ArrowLeft') {
+        if (event.key === 'ArrowLeft') {
 
-            // Send a left arrow sequence to the device
-            sendControlKey('ArrowLeft');
+            // Send control sequence ESC-[D
+            sendData("\x1B[D");
 
             // Prevent any action in the REPL console
             event.preventDefault();
+
+            // Return
+            return;
         }
 
         // If Tab is pressed
-        if (event.code === 'Tab') {
+        if (event.key === 'Tab') {
 
-            // Send a tab to the device
-            sendControlKey('Tab');
+            // Send control code 09
+            sendData("\x09");
 
             // Prevent any action in the REPL console
             event.preventDefault();
+
+            // Return
+            return;
         }
     }
 
@@ -385,110 +443,6 @@
                 // Move the cursor forward
                 cursorPosition += "\nCould not paste. Did you allow clipboard permissions?".length;
             });
-    }
-
-    // Whenever a control key or sequence is to be issued to the device
-    function sendControlKey(value) {
-
-        switch (value) {
-
-            // In the case of Ctrl-A
-            case 'KeyA':
-
-                // Send control code 01
-                sendData("\001");
-                break;
-
-            // In the case of Ctrl-B
-            case 'KeyB':
-
-                // Send control code 02
-                sendData("\002");
-                break;
-
-            // In the case of Ctrl-C
-            case 'KeyC':
-
-                // Send control code 03
-                sendData("\003");
-                break;
-
-            // In the case of Ctrl-D
-            case 'KeyD':
-
-                // Send control code 04
-                sendData("\004");
-                break;
-
-            // In the case of Ctrl-E
-            case 'KeyE':
-
-                // Send control code 05
-                sendData("\005");
-                break;
-
-            // In the case of Clear
-            case 'Clear':
-
-                // Clear the console
-                replConsole.value = "";
-
-                // Reset the cursor position to zero
-                cursorPosition = 0;
-
-                // Send control code 03 to reset the REPL
-                sendData("\003");
-                break;
-
-            // In case of up arrow
-            case 'ArrowUp':
-
-                // Send control sequence ESC-[A
-                sendData("\x1B[A");
-                break;
-
-            // In case of down arrow
-            case 'ArrowDown':
-
-                // Send control sequence ESC-[B
-                sendData("\x1B[B");
-                break;
-
-            // In case of right arrow
-            case 'ArrowRight':
-
-                // Send control sequence ESC-[C
-                sendData("\x1B[C");
-                break;
-
-            // In case of left arrow
-            case 'ArrowLeft':
-
-                // Send control sequence ESC-[D
-                sendData("\x1B[D");
-                break;
-
-            // In case of Tab
-            case 'Tab':
-
-                // Send control code 09
-                sendData("\x09");
-                break;
-
-            // In case of Backspace
-            case 'Backspace':
-
-                // Send control code 08
-                sendData("\x08");
-                break;
-
-            // For anything not handled
-            default:
-
-                // Print an error message to the debug console
-                console.error(value + " not handled.");
-                break;
-        }
     }
 
     // Whenever data arrives over bluetooth
