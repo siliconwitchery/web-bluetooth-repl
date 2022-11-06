@@ -46,7 +46,7 @@
 
         <!-- REPL console -->
         <textarea type="text" id="replConsole" rows=20 autocomplete="off" autocorrect="off" autocapitalize="off"
-            spellcheck="false" placeholder=""></textarea>
+            spellcheck="false" placeholder="" onpaste="pasteEvent();event.preventDefault()"></textarea>
 
         <!-- Buttons -->
         <div class="buttons">
@@ -91,7 +91,7 @@
 <!-- Javascript for interacting with the REPL console and buttons -->
 <script>
 
-    // Text shown in the repl when there is no connection
+    // Text shown in the REPL when there is no connection
     const replPlaceholderText =
         "Welcome to the MicroPython Web REPL. Connect via Bluetooth using the button below.\n\n" +
         "Currently, only Chrome desktop supports Web Bluetooth which is used here.\n\n" +
@@ -285,6 +285,28 @@
                     break;
             }
         }
+    }
+
+    // Handle pasting of text into the REPL
+    function pasteEvent() {
+
+        // Read the clipboard
+        navigator.clipboard.readText()
+            .then(text => {
+
+                // Send the entire clipboard, with line-feeds replaced with CRLF
+                sendData(text.replace('\n', '\r\n'));
+            })
+
+            // Catch any errors
+            .catch(err => {
+
+                // Print a message in the REPL console
+                replConsole.value = replConsole.value + "\nCould not paste. Did you allow clipboard permissions?";
+
+                // Move the cursor forward
+                cursorPosition += "\nCould not paste. Did you allow clipboard permissions?".length;
+            });
     }
 
     // Send control sequences over bluetooth
