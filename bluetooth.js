@@ -1,12 +1,22 @@
 // Global device and characteristic objects
 let device = null;
-let rxCharacteristic = null;
-let txCharacteristic = null;
+let uartRxCharacteristic = null;
+let uartTxCharacteristic = null;
+let rawDataRxCharacteristic = null;
+let rawDataTxCharacteristic = null;
 
-// UUIDs for services and characteristics
-let nordicUARTServiceUUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-let rxCharacteristicUUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-let txCharacteristicUUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+// UUIDs for UART service and characteristics
+let nordicUartServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+let uartRxCharacteristicUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+let uartTxCharacteristicUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
+// UUIDs for raw data service and characteristics
+let rawDataServiceUuid = "e5700001-7bac-429a-b4ce-57ff900f479d";
+let rawDataRxCharacteristicUuid = "e5700002-7bac-429a-b4ce-57ff900f479d";
+let rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
+
+// Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
+const mtu = 100;
 
 // Promise function to check if bluetooth is available on the browser
 function isWebBluetoothAvailable() {
@@ -34,41 +44,39 @@ async function connectDisconnect() {
         // Otherwise connect
         device = await navigator.bluetooth.requestDevice({
             filters: [{
-                services: [nordicUARTServiceUUID]
+                services: [nordicUartServiceUuid]
             }]
         });
 
         // Handler to watch for device being disconnected due to loss of connection
         device.addEventListener('gattserverdisconnected', disconnectHandler);
 
-        // Connect to device and get primary service as well as characteristics
+        // Connect to the device and get the services and characteristics
         const server = await device.gatt.connect();
-        const service = await server.getPrimaryService(nordicUARTServiceUUID);
-        rxCharacteristic = await service.getCharacteristic(rxCharacteristicUUID);
-        txCharacteristic = await service.getCharacteristic(txCharacteristicUUID);
+        const service = await server.getPrimaryService(nordicUartServiceUuid);
+        uartRxCharacteristic = await service.getCharacteristic(uartRxCharacteristicUuid);
+        uartTxCharacteristic = await service.getCharacteristic(uartTxCharacteristicUuid);
 
-        // Start notifications on the receiving characteristic and create a handler
-        await txCharacteristic.startNotifications();
-        txCharacteristic.addEventListener('characteristicvaluechanged', incomingDataHandler);
+        // Start notifications on the receiving characteristic and create handlers
+        await uartTxCharacteristic.startNotifications();
+        uartTxCharacteristic.addEventListener('characteristicvaluechanged', receiveUartData);
 
         // Connected as unsecure method
         return Promise.resolve("connected");
 
     } catch (error) {
+
         // Return error if there is any
         return Promise.reject(error);
     }
 }
 
-// Function to transmit data to the device
-async function sendData(string) {
+// Function to transmit serial data to the device
+async function sendUartData(string) {
 
-    // Encode the string into an array
+    // Encode the UTF-8 string into an array
     let encoder = new TextEncoder('utf-8');
     let data = encoder.encode(string);
-
-    // The MTU size. TODO can we figure this out dynamically?
-    let mtu = 128 - 3;
 
     // Break the string up into mtu sized packets
     for (let chunk = 0; chunk < Math.ceil(data.length / mtu); chunk++) {
@@ -78,7 +86,20 @@ async function sendData(string) {
         let end = mtu * (chunk + 1);
 
         // Send each slice of data (the partial last chunk is safely handled with slice)
-        await rxCharacteristic.writeValueWithResponse(data.slice(start, end))
-            .catch(console.error);
+        await uartRxCharacteristic.writeValueWithResponse(data.slice(start, end))
+            .catch(error => {
+
+                // If there was an operation already ongoing
+                if (error == "NetworkError: GATT operation already in progress.") {
+
+                    // Try to send the again
+                    sendUartData(string);
+                }
+                else {
+
+                    // Return any other error that may happen
+                    return Promise.reject(error);
+                }
+            });
     }
 }

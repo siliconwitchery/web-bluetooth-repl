@@ -53,22 +53,22 @@
 
             <button id="connectButton" title="Open Bluetooth connection pane">Connect</button>
 
-            <button onclick="sendData('\x01'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="sendUartData('\x01'); replConsole.focus()" name="controlButton" disabled
                 title="Enter raw REPL mode (Ctrl-A)">Ctrl-A</button>
 
-            <button onclick="sendData('\x02'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="sendUartData('\x02'); replConsole.focus()" name="controlButton" disabled
                 title="Enter normal REPL mode (Ctrl-B)">Ctrl-B</button>
 
-            <button onclick="sendData('\x03'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="sendUartData('\x03'); replConsole.focus()" name="controlButton" disabled
                 title="Interrupt a running program (Ctrl-C)">Ctrl-C</button>
 
-            <button onclick="sendData('\x04'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="sendUartData('\x04'); replConsole.focus()" name="controlButton" disabled
                 title="Reset the device (Ctrl-D)">Ctrl-D</button>
 
-            <button onclick="sendData('\x05'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="sendUartData('\x05'); replConsole.focus()" name="controlButton" disabled
                 title="Enter paste mode (Ctrl-E)">Ctrl-E</button>
 
-            <button onclick="replConsole.value = ''; cursorPosition = 0; sendData('\x03');replConsole.focus()"
+            <button onclick="replConsole.value = ''; cursorPosition = 0; sendUartData('\x03');replConsole.focus()"
                 title="Clear console (Cmd-k or Ctrl-k)">Clear</button>
 
         </div>
@@ -111,67 +111,50 @@
     });
 
     // When the connect/disconnect button is pressed
-    connectButton.addEventListener('click', function () {
+    connectButton.addEventListener('click', () => {
 
         // Call the connectDisconnect() function
         connectDisconnect()
 
-            // Then handle one of the two results. Connected, or disconnected
-            .then(function (result) {
-                switch (result) {
+            // Once the promise returns
+            .then(result => {
 
-                    // If connected
-                    case "connected":
+                // If connected 
+                if (result === "connected") {
 
-                        // Clear placeholder text in the REPL console
-                        replConsole.placeholder = "";
+                    // Clear placeholder text in the REPL console
+                    replConsole.placeholder = "";
 
-                        // Change the button text to "Disconnect"
-                        connectButton.innerHTML = "Disconnect";
+                    // Change the button text to "Disconnect"
+                    connectButton.innerHTML = "Disconnect";
 
-                        // Enable the control buttons
-                        controlButtons.forEach(function (ele) {
-                            ele.disabled = false;
-                        })
+                    // Enable the control buttons
+                    controlButtons.forEach(ele => {
+                        ele.disabled = false;
+                    })
 
-                        // Print "connected" in the REPL console
-                        replConsole.value = replConsole.value + "\nConnected";
+                    // Print "connected" in the REPL console
+                    replConsole.value = replConsole.value + "\nConnected";
 
-                        // Move the cursor forward
-                        cursorPosition += "\nConnected".length;
+                    // Move the cursor forward
+                    cursorPosition = replConsole.value.length;
 
-                        // Send Ctrl-C to the device
-                        sendData("\x03");
+                    // Send Ctrl-C to the device
+                    sendUartData("\x03");
 
-                        // Focus the cursor to the REPL console
-                        replConsole.focus();
-
-                        break;
-
-                    // If disconnected
-                    case "disconnected":
-
-                        // Print "disconnected" in the REPL console
-                        replConsole.value = replConsole.value + "\nDisconnected";
-
-                        // Move the cursor forward
-                        cursorPosition += "\nDisconnected".length;
-
-                        // Run the disconnect handler
-                        disconnectHandler();
-
-                        break;
+                    // Focus the cursor to the REPL console
+                    replConsole.focus();
                 }
             })
 
             // If we couldn't connect
-            .catch(function (error) {
+            .catch(error => {
 
                 // Print an error message in the REPL console
                 replConsole.value = replConsole.value + "\nCanceled, or couldn't connect. Are you using Chrome?";
 
                 // Move the cursor forward
-                cursorPosition += "\nCanceled, or couldn't connect. Are you using Chrome?".length;
+                cursorPosition = replConsole.value.length;
 
                 // Log the error to the debug console
                 console.error(error);
@@ -192,16 +175,16 @@
         }
 
         // Send the keypress
-        sendData(key)
+        sendUartData(key)
 
             // If an error occurs
-            .catch(function (error) {
+            .catch(error => {
 
                 // Print an error message in the REPL console
-                replConsole.value += + "\nBluetooth error. Are you connected?";
+                replConsole.value += "\nBluetooth error. Are you connected?";
 
                 // Move the cursor forward
-                cursorPosition += "\nBluetooth error. Are you connected?".length;
+                cursorPosition = replConsole.value.length;
 
                 // Log the error to the debug console
                 console.error(error);
@@ -222,7 +205,7 @@
                 case 'a':
 
                     // Send control code 01
-                    sendData("\x01");
+                    sendUartData("\x01");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -234,7 +217,7 @@
                 case 'b':
 
                     // Send control code 02
-                    sendData("\x02");
+                    sendUartData("\x02");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -246,7 +229,7 @@
                 case 'c':
 
                     // Send control code 03
-                    sendData("\x03");
+                    sendUartData("\x03");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -258,7 +241,7 @@
                 case 'd':
 
                     // Send control code 04
-                    sendData("\x04");
+                    sendUartData("\x04");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -270,7 +253,7 @@
                 case 'e':
 
                     // Send control code 05
-                    sendData("\x05");
+                    sendUartData("\x05");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -294,7 +277,7 @@
                     cursorPosition = 0;
 
                     // Send control code 03 to reset the REPL
-                    sendData("\x03");
+                    sendUartData("\x03");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -306,7 +289,7 @@
                 case 'Backspace':
 
                     // Send a bunch of backspaces to clear the whole line
-                    sendData("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+                    sendUartData("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -318,7 +301,7 @@
                 case 'ArrowRight':
 
                     // Send a bunch of right arrow keys
-                    sendData("\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
+                    sendUartData("\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
                         "\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
                         "\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C");
 
@@ -332,7 +315,7 @@
                 case 'ArrowLeft':
 
                     // Send a bunch of left arrow keys
-                    sendData("\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
+                    sendUartData("\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
                         "\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
                         "\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D");
 
@@ -348,7 +331,7 @@
         if (event.key === 'Backspace') {
 
             // Send control code 08
-            sendData("\x08");
+            sendUartData("\x08");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -361,7 +344,7 @@
         if (event.key === 'ArrowUp') {
 
             // Send control sequence ESC-[A
-            sendData("\x1B[A");
+            sendUartData("\x1B[A");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -374,7 +357,7 @@
         if (event.key === 'ArrowDown') {
 
             // Send control sequence ESC-[B
-            sendData("\x1B[B");
+            sendUartData("\x1B[B");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -387,7 +370,7 @@
         if (event.key === 'ArrowRight') {
 
             // Send control sequence ESC-[C
-            sendData("\x1B[C");
+            sendUartData("\x1B[C");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -400,7 +383,7 @@
         if (event.key === 'ArrowLeft') {
 
             // Send control sequence ESC-[D
-            sendData("\x1B[D");
+            sendUartData("\x1B[D");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -413,7 +396,7 @@
         if (event.key === 'Tab') {
 
             // Send control code 09
-            sendData("\x09");
+            sendUartData("\x09");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -431,22 +414,22 @@
             .then(text => {
 
                 // Send the entire clipboard, with line-feeds replaced with CRLF
-                sendData(text.replace('\n', '\r\n'));
+                sendUartData(text.replace('\n', '\r\n'));
             })
 
             // Catch any errors
-            .catch(err => {
+            .catch(() => {
 
                 // Print a message in the REPL console
                 replConsole.value = replConsole.value + "\nCould not paste. Did you allow clipboard permissions?";
 
                 // Move the cursor forward
-                cursorPosition += "\nCould not paste. Did you allow clipboard permissions?".length;
+                cursorPosition = replConsole.value.length;
             });
     }
 
     // Whenever data arrives over bluetooth
-    function incomingDataHandler(event) {
+    function receiveUartData(event) {
 
         // Decode the byte array into a UTF-8 string
         const decoder = new TextDecoder('utf-8');
@@ -523,11 +506,17 @@
     // Whenever a disconnect event occurs
     function disconnectHandler() {
 
+        // Print "disconnected" in the REPL console
+        replConsole.value = replConsole.value + "\nDisconnected";
+
+        // Move the cursor forward
+        cursorPosition = replConsole.value.length;
+
         // Show "Connect"
         connectButton.innerHTML = "Connect";
 
         // Disable all the buttons again
-        controlButtons.forEach(function (ele) {
+        controlButtons.forEach(ele => {
             ele.disabled = true;
         })
     }
