@@ -68,7 +68,7 @@
             <button onclick="sendUartData('\x05'); replConsole.focus()" name="controlButton" disabled
                 title="Enter paste mode (Ctrl-E)">Ctrl-E</button>
 
-            <button onclick="replConsole.value = ''; cursorPosition = 0; sendUartData('\x03');replConsole.focus()"
+            <button onclick="replConsole.value = ''; cursorPosition = 0; sendUartData('\x03');focusREPL();"
                 title="Clear console (Cmd-k or Ctrl-k)">Clear</button>
 
         </div>
@@ -142,8 +142,8 @@
                     // Send Ctrl-C to the device
                     sendUartData("\x03");
 
-                    // Focus the cursor to the REPL console
-                    replConsole.focus();
+                    // Focus the cursor to the REPL console, and scroll down
+                    focusREPL();
                 }
             })
 
@@ -155,6 +155,9 @@
 
                 // Move the cursor forward
                 cursorPosition = replConsole.value.length;
+
+                // Focus the cursor to the REPL console, and scroll down
+                focusREPL();
 
                 // Log the error to the debug console
                 console.error(error);
@@ -185,6 +188,9 @@
 
                 // Move the cursor forward
                 cursorPosition = replConsole.value.length;
+
+                // Focus the cursor to the REPL console, and scroll down
+                focusREPL();
 
                 // Log the error to the debug console
                 console.error(error);
@@ -414,7 +420,23 @@
             .then(text => {
 
                 // Send the entire clipboard, with line-feeds replaced with CRLF
-                sendUartData(text.replace('\n', '\r\n'));
+                sendUartData(text.replace('\n', '\r\n'))
+
+                    // If an error occurs
+                    .catch(error => {
+
+                        // Print an error message in the REPL console
+                        replConsole.value += "\nBluetooth error. Are you connected?";
+
+                        // Move the cursor forward
+                        cursorPosition = replConsole.value.length;
+
+                        // Focus the cursor to the REPL console, and scroll down
+                        focusREPL();
+
+                        // Log the error to the debug console
+                        console.error(error);
+                    });
             })
 
             // Catch any errors
@@ -425,6 +447,12 @@
 
                 // Move the cursor forward
                 cursorPosition = replConsole.value.length;
+
+                // Send Ctrl-C to the device
+                sendUartData("\x03");
+
+                // Focus the cursor to the REPL console, and scroll down
+                focusREPL();
             });
     }
 
@@ -512,6 +540,9 @@
         // Move the cursor forward
         cursorPosition = replConsole.value.length;
 
+        // Focus the cursor to the REPL console, and scroll down
+        focusREPL();
+
         // Show "Connect"
         connectButton.innerHTML = "Connect";
 
@@ -519,6 +550,16 @@
         controlButtons.forEach(ele => {
             ele.disabled = true;
         })
+    }
+
+    // Helper function to ensure the REPL console is scrolled down and focused
+    function focusREPL() {
+
+        // Focus the cursor to the REPL console
+        replConsole.focus();
+
+        // Make sure the REPL console is scrolled all the way down
+        replConsole.scrollTop = replConsole.scrollHeight;
     }
 
 </script>
