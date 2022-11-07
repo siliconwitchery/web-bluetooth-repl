@@ -173,6 +173,9 @@
         // If Enter is pressed
         if (key === 'Enter') {
 
+            // Move cursor to the end of the line
+            cursorPosition = replConsole.value.length;
+
             // Replace it with CRLF
             key = "\r\n";
         }
