@@ -534,6 +534,12 @@
         replConsole.scrollTop = replConsole.scrollHeight;
     }
 
+    // Whenever raw data arrives over bluetooth
+    function receiveRawData(event) {
+
+        console.log(event.target.value);
+    }
+
     // Whenever a disconnect event occurs
     function disconnectHandler() {
 
