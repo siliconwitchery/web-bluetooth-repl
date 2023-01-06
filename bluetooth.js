@@ -45,7 +45,10 @@ async function connectDisconnect() {
         device = await navigator.bluetooth.requestDevice({
             filters: [{
                 services: [nordicUartServiceUuid]
-            }]
+            }],
+            optionalServices: [
+                rawDataServiceUuid
+            ]
         });
 
         // Handler to watch for device being disconnected due to loss of connection
@@ -53,13 +56,20 @@ async function connectDisconnect() {
 
         // Connect to the device and get the services and characteristics
         const server = await device.gatt.connect();
-        const service = await server.getPrimaryService(nordicUartServiceUuid);
-        uartRxCharacteristic = await service.getCharacteristic(uartRxCharacteristicUuid);
-        uartTxCharacteristic = await service.getCharacteristic(uartTxCharacteristicUuid);
+
+        const uartService = await server.getPrimaryService(nordicUartServiceUuid);
+        uartRxCharacteristic = await uartService.getCharacteristic(uartRxCharacteristicUuid);
+        uartTxCharacteristic = await uartService.getCharacteristic(uartTxCharacteristicUuid);
+
+        const rawDataService = await server.getPrimaryService(rawDataServiceUuid);
+        rawDataRxCharacteristic = await rawDataService.getCharacteristic(rawDataRxCharacteristicUuid);
+        rawDataTxCharacteristic = await rawDataService.getCharacteristic(rawDataTxCharacteristicUuid);
 
         // Start notifications on the receiving characteristic and create handlers
         await uartTxCharacteristic.startNotifications();
+        await rawDataTxCharacteristic.startNotifications();
         uartTxCharacteristic.addEventListener('characteristicvaluechanged', receiveUartData);
+        rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
 
         // Connected as unsecure method
         return Promise.resolve("connected");
@@ -73,7 +83,10 @@ async function connectDisconnect() {
 
 // Function to transmit serial data to the device
 async function sendUartData(string) {
-
+    if(nativeFunc){
+        window.ReactNativeWebView.postMessage(string)
+        return;
+    }
     // Encode the UTF-8 string into an array
     let encoder = new TextEncoder('utf-8');
     let data = encoder.encode(string);
