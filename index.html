@@ -33,7 +33,6 @@
 
     <div class="app">
 
-        <!-- Title -->
         <h1>MicroPython Web REPL</h1>
 
         <!-- Latest version and docs link -->
@@ -73,7 +72,6 @@
 
         </div>
 
-        <!-- Footer -->
         <footer>
 
             <p>For help, bug reporting, and source code, visit the
@@ -91,13 +89,13 @@
 <!-- Javascript for interacting with the REPL console and buttons -->
 <script>
 
-    // Text shown in the REPL when there is no connection
-    const replPlaceholderText =
-        "Welcome to the MicroPython Web REPL. Connect via Bluetooth using the button below.\n\n" +
-        "Currently, only Chrome desktop supports Web Bluetooth which is used here.\n\n" +
-        "You're welcome to fork, contribute, and suggest bugfixes for this code within the repository linked below."
+    window.addEventListener("load", (event) => {
+        replConsole.placeholder =
+            "Welcome to the MicroPython Web REPL. Connect via Bluetooth using the button below.\n\n" +
+            "Currently, only Chrome desktop supports Web Bluetooth which is used here.\n\n" +
+            "You're welcome to fork, contribute, and suggest bugfixes for this code within the repository linked below.";
+    });
 
-    // Reference to the REPL console and buttons
     const replConsole = document.getElementById('replConsole');
     const connectButton = document.getElementById('connectButton');
     const controlButtons = document.getElementsByName('controlButton');
@@ -105,30 +103,16 @@
     // Variable for keeping track of the current cursor position
     var cursorPosition = 0;
 
-    // When the page loads
-    window.addEventListener("load", (event) => {
-        replConsole.placeholder = replPlaceholderText;
-    });
-
-    // When the connect/disconnect button is pressed
     connectButton.addEventListener('click', () => {
 
-        // Call the connectDisconnect() function
         connectDisconnect()
-
-            // Once the promise returns
             .then(result => {
-
-                // If connected 
                 if (result === "connected") {
 
-                    // Clear placeholder text in the REPL console
                     replConsole.placeholder = "";
 
-                    // Change the button text to "Disconnect"
                     connectButton.innerHTML = "Disconnect";
 
-                    // Enable the control buttons
                     controlButtons.forEach(ele => {
                         ele.disabled = false;
                     })
@@ -137,38 +121,30 @@
 
                     // TODO show the connection good icon
 
-                    // Send Ctrl-C to the device
-                    queueReplData("\x03");
+                    queueReplData("\x03"); // Send Ctrl-C to get a prompt
                 }
             })
 
-            // If we couldn't connect
             .catch(error => {
 
                 // TODO show the connection bad icon
 
-                // Log the error to the debug console
                 console.error(error);
             })
     })
 
-    // Whenever keys are pressed
     replConsole.onkeypress = (event) => {
 
         // Create a mutable copy of the event.key value
         let key = event.key;
 
-        // If Enter is pressed
         if (key === 'Enter') {
 
-            // Replace it with CRLF
             key = "\r\n";
 
-            // End key
-            queueReplData("\x1B[F");
+            queueReplData("\x1B[F"); // Send End key before sending \r\n
         }
 
-        // Send the keypress
         queueReplData(key)
 
         // Don't print characters to the REPL console because the response will print it for us
@@ -182,64 +158,34 @@
         if (event.ctrlKey) {
             switch (event.key) {
 
-                // In the case of Ctrl-A
                 case 'a':
 
-                    // Send control code 01
-                    queueReplData("\x01");
-
-                    // Prevent any action in the REPL console
-                    event.preventDefault();
-
-                    // Return
+                    queueReplData("\x01"); // Send Ctrl-A
+                    event.preventDefault(); // Prevent select all
                     return;
 
-                // In the case of Ctrl-B
                 case 'b':
 
-                    // Send control code 02
-                    queueReplData("\x02");
-
-                    // Prevent any action in the REPL console
+                    queueReplData("\x02"); // Send Ctrl-B
                     event.preventDefault();
-
-                    // Return
                     return;
 
-                // In the case of Ctrl-C
                 case 'c':
 
-                    // Send control code 03
-                    queueReplData("\x03");
-
-                    // Prevent any action in the REPL console
-                    event.preventDefault();
-
-                    // Return
+                    queueReplData("\x03"); // Send Ctrl-C
+                    event.preventDefault(); // Prevent copy
                     return;
 
-                // In the case of Ctrl-D
                 case 'd':
 
-                    // Send control code 04
-                    queueReplData("\x04");
-
-                    // Prevent any action in the REPL console
+                    queueReplData("\x04"); // Send Ctrl-D
                     event.preventDefault();
-
-                    // Return
                     return;
 
-                // In the case of Ctrl-E
                 case 'e':
 
-                    // Send control code 05
-                    queueReplData("\x05");
-
-                    // Prevent any action in the REPL console
+                    queueReplData("\x05"); // Send Ctrl-E
                     event.preventDefault();
-
-                    // Return
                     return;
             }
         }
@@ -248,166 +194,95 @@
         if (event.metaKey) {
             switch (event.key) {
 
-                // In the case of Meta-K or Meta-backspace
                 case 'k':
 
-                    // Clear the console
                     replConsole.value = "";
-
-                    // Reset the cursor position to zero
                     cursorPosition = 0;
-
-                    // Send control code 03 to reset the REPL
-                    queueReplData("\x03");
-
-                    // Prevent any action in the REPL console
+                    queueReplData("\x03"); // Send Ctrl-C
                     event.preventDefault();
-
-                    // Return
                     return;
 
-                // In the case of Meta-backspace
                 case 'Backspace':
 
-                    // Send a bunch of backspaces to clear the whole line
                     queueReplData(
                         "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
                         "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
                         "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-
-                    // Prevent any action in the REPL console
                     event.preventDefault();
-
-                    // Return
                     return;
 
-                // In the case of Meta-right
                 case 'ArrowRight':
 
-                    // End key
-                    queueReplData("\x1B[F");
-
-                    // Prevent any action in the REPL console
+                    queueReplData("\x1B[F"); // Send End key
                     event.preventDefault();
-
-                    // Return
                     return;
 
-                // In the case of Meta-left
                 case 'ArrowLeft':
 
-                    // Home key
-                    queueReplData("\x1B[H");
-
-                    // Prevent any action in the REPL console
+                    queueReplData("\x1B[H"); // Send Home key
                     event.preventDefault();
-
-                    // Return
                     return;
             }
         }
 
-        // If backspace is pressed
         if (event.key === 'Backspace') {
 
-            // Send control code 08
-            queueReplData("\x08");
-
-            // Prevent any action in the REPL console
+            queueReplData("\x08"); // Send backspace
             event.preventDefault();
-
-            // Return
             return;
         }
 
-        // If up is pressed
         if (event.key === 'ArrowUp') {
 
-            // Send control sequence ESC-[A
-            queueReplData("\x1B[A");
-
-            // Prevent any action in the REPL console
+            queueReplData("\x1B[A"); // Send up arrow key
             event.preventDefault();
-
-            // Return
             return;
         }
 
-        // If down is pressed
         if (event.key === 'ArrowDown') {
 
-            // Send control sequence ESC-[B
-            queueReplData("\x1B[B");
-
-            // Prevent any action in the REPL console
+            queueReplData("\x1B[B"); // Send down arrow key
             event.preventDefault();
-
-            // Return
             return;
         }
 
-        // If right is pressed
         if (event.key === 'ArrowRight') {
 
-            // Send control sequence ESC-[C
-            queueReplData("\x1B[C");
-
-            // Prevent any action in the REPL console
+            queueReplData("\x1B[C"); // Send right arrow key
             event.preventDefault();
-
-            // Return
             return;
         }
 
-        // If left is pressed
         if (event.key === 'ArrowLeft') {
 
-            // Send control sequence ESC-[D
-            queueReplData("\x1B[D");
-
-            // Prevent any action in the REPL console
+            queueReplData("\x1B[D"); // Send left arrow key
             event.preventDefault();
-
-            // Return
             return;
         }
 
-        // If Tab is pressed
         if (event.key === 'Tab') {
 
-            // Send control code 09
-            queueReplData("\x09");
-
-            // Prevent any action in the REPL console
+            queueReplData("\x09"); // Send Tab key
             event.preventDefault();
-
-            // Return
             return;
         }
     }
 
-    // Handle pasting of text into the REPL
     function pasteEvent() {
 
-        // Read the clipboard
         navigator.clipboard.readText()
             .then(text => {
 
-                // Send the entire clipboard, with line-feeds replaced with CRLF
+                // Micropython requires \r\n
                 queueReplData(text.replace('\n', '\r\n'))
             })
 
-            // Catch any errors
             .catch(() => {
 
                 alert("Could not paste. Did you allow clipboard permissions?");
-
-                // Send Ctrl-C to the device
-                queueReplData("\x03");
             });
     }
 
-    // Whenever data arrives over bluetooth
     function receiveReplData(event) {
 
         // Decode the byte array into a UTF-8 string
@@ -415,61 +290,46 @@
         let value = event.target.value;
         let string = decoder.decode(value);
 
-        // For every character in the incoming string (i is incremented internally)
+        // For every character in the string, i is incremented internally
         for (let i = 0; i < string.length;) {
 
-            // Check if there's a backspace character at the current position
+            // Move cursor back one if there is a backspace
             if (string.indexOf('\b', i) == i) {
 
-                // Move the cursor back by one space
                 cursorPosition--;
-
-                // Skip past the backspace character
                 i += '\b'.length;
             }
 
-            // Check if there is a carriage return at the current position
+            // Skip carriage returns. We only need newlines '\n'
             else if (string.indexOf('\r', i) == i) {
 
-                // Skip past the carriage return character
                 i += '\r'.length;
             }
 
-            // Check if there's an ESC-[K sequence at the current position
+            // ESC-[K deletes to the end of the line
             else if (string.indexOf('\x1B[K', i) == i) {
 
-                // Remove everything from the cursor to the end of the string
                 replConsole.value = replConsole.value.slice(0, cursorPosition);
-
-                // Skip ahead past the ESC-[K
                 i += '\x1B[K'.length;
             }
 
-            // Check if there's an ESC-[nD sequence at the current position
+            // ESC-[nD moves backwards n characters
             else if (string.slice(i).search(/\x1B\[\d+D/) == 0) {
 
                 // Extract the number of spaces to move
                 let backspaces = parseInt(string.slice(i).match(/(\d+)(?!.*\1)/g));
-
-                // Move the cursor back that many spaces
                 cursorPosition -= backspaces;
-
-                // Skip ahead past the ESC-[nD
                 i += '\x1B[D'.length + String(backspaces).length;
             }
 
-            // Otherwise for all other characters
+            // Append other characters as normal
             else {
 
-                // Append the output with the new character
                 replConsole.value = replConsole.value.slice(0, cursorPosition)
                     + string[i]
                     + replConsole.value.slice(cursorPosition + 1);
 
-                // Move the cursor forward by one space
                 cursorPosition++;
-
-                // Skip one character
                 i++;
             }
         }
@@ -478,25 +338,20 @@
         replConsole.selectionEnd = cursorPosition;
         replConsole.selectionStart = cursorPosition;
 
-        // Make sure the REPL console is scrolled all the way down
         replConsole.scrollTop = replConsole.scrollHeight;
     }
 
-    // Whenever raw data arrives over bluetooth
     function receiveRawData(event) {
 
         console.log(event.target.value);
     }
 
-    // Whenever a disconnect event occurs
     function disconnectHandler() {
 
         // TODO show the bluetooth disconnected
 
-        // Show "Connect"
         connectButton.innerHTML = "Connect";
 
-        // Disable all the buttons again
         controlButtons.forEach(ele => {
             ele.disabled = true;
         })
@@ -507,23 +362,18 @@
 <!-- Populates the latest MicroPython version number via an API -->
 <script type="module">
 
-    // Import GitHub Octokit API
     import { Octokit } from "https://cdn.skypack.dev/@octokit/core";
 
-    // Reference to the <a> link where we'll insert the version string
     const latestVersion = document.getElementById('latestVersion');
 
-    // Get the version from the API and populate the value
     (async function getVersion() {
 
-        // Call the API for latest release
         const octokit = new Octokit({});
         const latestRelease = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
             owner: 'siliconwitchery',
             repo: 'micropython'
         });
 
-        // Set the inner value of the <a> link to the tag string
         latestVersion.innerHTML = latestRelease.data.tag_name;
     })();
 
