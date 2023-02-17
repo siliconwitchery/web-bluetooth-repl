@@ -13,7 +13,7 @@ To achieve this functionality, we've implemented some tricks to work with all th
 The only caveat is that *currently* only large MTU devices are supported.
 
 ## Currently supported features
-- Connecting over BLE via the Nordic UART service
+- Connecting over BLE via the Nordic UART service (aka REPL data service)
 - All REPL modes including raw, friendly and paste
 - Switching between modes using Ctrl-A to Ctrl-E
 - Auto indentation

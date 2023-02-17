@@ -53,22 +53,22 @@
 
             <button id="connectButton" title="Open Bluetooth connection pane">Connect</button>
 
-            <button onclick="sendUartData('\x01'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="queueReplData('\x01'); replConsole.focus()" name="controlButton" disabled
                 title="Enter raw REPL mode (Ctrl-A)">Ctrl-A</button>
 
-            <button onclick="sendUartData('\x02'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="queueReplData('\x02'); replConsole.focus()" name="controlButton" disabled
                 title="Enter normal REPL mode (Ctrl-B)">Ctrl-B</button>
 
-            <button onclick="sendUartData('\x03'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="queueReplData('\x03'); replConsole.focus()" name="controlButton" disabled
                 title="Interrupt a running program (Ctrl-C)">Ctrl-C</button>
 
-            <button onclick="sendUartData('\x04'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="queueReplData('\x04'); replConsole.focus()" name="controlButton" disabled
                 title="Reset the device (Ctrl-D)">Ctrl-D</button>
 
-            <button onclick="sendUartData('\x05'); replConsole.focus()" name="controlButton" disabled
+            <button onclick="queueReplData('\x05'); replConsole.focus()" name="controlButton" disabled
                 title="Enter paste mode (Ctrl-E)">Ctrl-E</button>
 
-            <button onclick="replConsole.value = ''; cursorPosition = 0; sendUartData('\x03');focusREPL();"
+            <button onclick="replConsole.value = ''; cursorPosition = 0; queueReplData('\x03');focusREPL();"
                 title="Clear console (Cmd-k or Ctrl-k)">Clear</button>
 
         </div>
@@ -80,7 +80,7 @@
                 <a href="https://github.com/siliconwitchery/web-bluetooth-repl" target="_blank">repository</a>
             </p>
 
-            <p>Copyright © 2022 <a href="https://www.siliconwitchery.com" target="_blank">Silicon Witchery</a></p>
+            <p>Copyright © 2023 <a href="https://www.siliconwitchery.com" target="_blank">Silicon Witchery</a></p>
 
         </footer>
 
@@ -140,7 +140,7 @@
                     cursorPosition = replConsole.value.length;
 
                     // Send Ctrl-C to the device
-                    sendUartData("\x03");
+                    queueReplData("\x03");
 
                     // Focus the cursor to the REPL console, and scroll down
                     focusREPL();
@@ -181,23 +181,7 @@
         }
 
         // Send the keypress
-        sendUartData(key)
-
-            // If an error occurs
-            .catch(error => {
-
-                // Print an error message in the REPL console
-                replConsole.value += "\nBluetooth error. Are you connected?";
-
-                // Move the cursor forward
-                cursorPosition = replConsole.value.length;
-
-                // Focus the cursor to the REPL console, and scroll down
-                focusREPL();
-
-                // Log the error to the debug console
-                console.error(error);
-            });
+        queueReplData(key)
 
         // Don't print characters to the REPL console because the response will print it for us
         event.preventDefault();
@@ -214,7 +198,7 @@
                 case 'a':
 
                     // Send control code 01
-                    sendUartData("\x01");
+                    queueReplData("\x01");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -226,7 +210,7 @@
                 case 'b':
 
                     // Send control code 02
-                    sendUartData("\x02");
+                    queueReplData("\x02");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -238,7 +222,7 @@
                 case 'c':
 
                     // Send control code 03
-                    sendUartData("\x03");
+                    queueReplData("\x03");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -250,7 +234,7 @@
                 case 'd':
 
                     // Send control code 04
-                    sendUartData("\x04");
+                    queueReplData("\x04");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -262,7 +246,7 @@
                 case 'e':
 
                     // Send control code 05
-                    sendUartData("\x05");
+                    queueReplData("\x05");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -286,7 +270,7 @@
                     cursorPosition = 0;
 
                     // Send control code 03 to reset the REPL
-                    sendUartData("\x03");
+                    queueReplData("\x03");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -298,7 +282,7 @@
                 case 'Backspace':
 
                     // Send a bunch of backspaces to clear the whole line
-                    sendUartData("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+                    queueReplData("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -310,7 +294,7 @@
                 case 'ArrowRight':
 
                     // Send a bunch of right arrow keys
-                    sendUartData("\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
+                    queueReplData("\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
                         "\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
                         "\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C");
 
@@ -324,7 +308,7 @@
                 case 'ArrowLeft':
 
                     // Send a bunch of left arrow keys
-                    sendUartData("\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
+                    queueReplData("\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
                         "\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
                         "\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D");
 
@@ -340,7 +324,7 @@
         if (event.key === 'Backspace') {
 
             // Send control code 08
-            sendUartData("\x08");
+            queueReplData("\x08");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -353,7 +337,7 @@
         if (event.key === 'ArrowUp') {
 
             // Send control sequence ESC-[A
-            sendUartData("\x1B[A");
+            queueReplData("\x1B[A");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -366,7 +350,7 @@
         if (event.key === 'ArrowDown') {
 
             // Send control sequence ESC-[B
-            sendUartData("\x1B[B");
+            queueReplData("\x1B[B");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -379,7 +363,7 @@
         if (event.key === 'ArrowRight') {
 
             // Send control sequence ESC-[C
-            sendUartData("\x1B[C");
+            queueReplData("\x1B[C");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -392,7 +376,7 @@
         if (event.key === 'ArrowLeft') {
 
             // Send control sequence ESC-[D
-            sendUartData("\x1B[D");
+            queueReplData("\x1B[D");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -405,7 +389,7 @@
         if (event.key === 'Tab') {
 
             // Send control code 09
-            sendUartData("\x09");
+            queueReplData("\x09");
 
             // Prevent any action in the REPL console
             event.preventDefault();
@@ -423,23 +407,7 @@
             .then(text => {
 
                 // Send the entire clipboard, with line-feeds replaced with CRLF
-                sendUartData(text.replace('\n', '\r\n'))
-
-                    // If an error occurs
-                    .catch(error => {
-
-                        // Print an error message in the REPL console
-                        replConsole.value += "\nBluetooth error. Are you connected?";
-
-                        // Move the cursor forward
-                        cursorPosition = replConsole.value.length;
-
-                        // Focus the cursor to the REPL console, and scroll down
-                        focusREPL();
-
-                        // Log the error to the debug console
-                        console.error(error);
-                    });
+                queueReplData(text.replace('\n', '\r\n'))
             })
 
             // Catch any errors
@@ -452,7 +420,7 @@
                 cursorPosition = replConsole.value.length;
 
                 // Send Ctrl-C to the device
-                sendUartData("\x03");
+                queueReplData("\x03");
 
                 // Focus the cursor to the REPL console, and scroll down
                 focusREPL();
@@ -460,7 +428,7 @@
     }
 
     // Whenever data arrives over bluetooth
-    function receiveUartData(event) {
+    function receiveReplData(event) {
 
         // Decode the byte array into a UTF-8 string
         const decoder = new TextDecoder('utf-8');
