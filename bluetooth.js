@@ -59,19 +59,26 @@ async function connectDisconnect() {
 
         const server = await device.gatt.connect();
 
+        // Set up the REPL characteristics
         const replService = await server.getPrimaryService(replDataServiceUuid);
+
         replRxCharacteristic = await replService.getCharacteristic(replRxCharacteristicUuid);
         replTxCharacteristic = await replService.getCharacteristic(replTxCharacteristicUuid);
-
-        const rawDataService = await server.getPrimaryService(rawDataServiceUuid);
-        rawDataRxCharacteristic = await rawDataService.getCharacteristic(rawDataRxCharacteristicUuid);
-        rawDataTxCharacteristic = await rawDataService.getCharacteristic(rawDataTxCharacteristicUuid);
-
-        // Start notifications on the receiving characteristic and create handlers
         await replTxCharacteristic.startNotifications();
-        await rawDataTxCharacteristic.startNotifications();
         replTxCharacteristic.addEventListener('characteristicvaluechanged', receiveReplData);
-        rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
+
+        // Try to set up the raw data characteristics if the service is available
+        const rawDataService = await server.getPrimaryService(rawDataServiceUuid)
+            .catch(error => {
+                console.log("Raw data service is not available on this device");
+            });
+
+        if (rawDataService) {
+            rawDataRxCharacteristic = await rawDataService.getCharacteristic(rawDataRxCharacteristicUuid);
+            rawDataTxCharacteristic = await rawDataService.getCharacteristic(rawDataTxCharacteristicUuid);
+            await rawDataTxCharacteristic.startNotifications();
+            rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
+        }
 
         // Start sending data
         setInterval(transmitReplData);
@@ -115,9 +122,11 @@ async function transmitReplData() {
         .catch(error => {
 
             if (error == "NetworkError: GATT operation already in progress.") {
-                // Ignore busy errors
+                // Ignore busy errors. Just wait and try again later
             }
             else {
+                // Discard data on other types of error
+                replDataTxQueue.splice(0, payload.length);
                 replDataTxInProgress = false;
                 return Promise.reject(error);
             }

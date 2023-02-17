@@ -68,7 +68,7 @@
             <button onclick="queueReplData('\x05'); replConsole.focus()" name="controlButton" disabled
                 title="Enter paste mode (Ctrl-E)">Ctrl-E</button>
 
-            <button onclick="replConsole.value = ''; cursorPosition = 0; queueReplData('\x03');focusREPL();"
+            <button onclick="replConsole.value = ''; cursorPosition = 0; queueReplData('\x03'); replConsole.focus()"
                 title="Clear console (Cmd-k or Ctrl-k)">Clear</button>
 
         </div>
@@ -133,31 +133,19 @@
                         ele.disabled = false;
                     })
 
-                    // Print "connected" in the REPL console
-                    replConsole.value = replConsole.value + "\nConnected";
+                    replConsole.focus()
 
-                    // Move the cursor forward
-                    cursorPosition = replConsole.value.length;
+                    // TODO show the connection good icon
 
                     // Send Ctrl-C to the device
                     queueReplData("\x03");
-
-                    // Focus the cursor to the REPL console, and scroll down
-                    focusREPL();
                 }
             })
 
             // If we couldn't connect
             .catch(error => {
 
-                // Print an error message in the REPL console
-                replConsole.value = replConsole.value + "\nCanceled, or couldn't connect. Are you using Chrome?";
-
-                // Move the cursor forward
-                cursorPosition = replConsole.value.length;
-
-                // Focus the cursor to the REPL console, and scroll down
-                focusREPL();
+                // TODO show the connection bad icon
 
                 // Log the error to the debug console
                 console.error(error);
@@ -412,17 +400,10 @@
             // Catch any errors
             .catch(() => {
 
-                // Print a message in the REPL console
-                replConsole.value = replConsole.value + "\nCould not paste. Did you allow clipboard permissions?";
-
-                // Move the cursor forward
-                cursorPosition = replConsole.value.length;
+                alert("Could not paste. Did you allow clipboard permissions?");
 
                 // Send Ctrl-C to the device
                 queueReplData("\x03");
-
-                // Focus the cursor to the REPL console, and scroll down
-                focusREPL();
             });
     }
 
@@ -510,14 +491,7 @@
     // Whenever a disconnect event occurs
     function disconnectHandler() {
 
-        // Print "disconnected" in the REPL console
-        replConsole.value = replConsole.value + "\nDisconnected";
-
-        // Move the cursor forward
-        cursorPosition = replConsole.value.length;
-
-        // Focus the cursor to the REPL console, and scroll down
-        focusREPL();
+        // TODO show the bluetooth disconnected
 
         // Show "Connect"
         connectButton.innerHTML = "Connect";
@@ -526,16 +500,6 @@
         controlButtons.forEach(ele => {
             ele.disabled = true;
         })
-    }
-
-    // Helper function to ensure the REPL console is scrolled down and focused
-    function focusREPL() {
-
-        // Focus the cursor to the REPL console
-        replConsole.focus();
-
-        // Make sure the REPL console is scrolled all the way down
-        replConsole.scrollTop = replConsole.scrollHeight;
     }
 
 </script>
