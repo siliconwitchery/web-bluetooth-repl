@@ -103,7 +103,7 @@
     const controlButtons = document.getElementsByName('controlButton');
 
     // Variable for keeping track of the current cursor position
-    let cursorPosition = 0;
+    var cursorPosition = 0;
 
     // When the page loads
     window.addEventListener("load", (event) => {
@@ -173,11 +173,11 @@
         // If Enter is pressed
         if (key === 'Enter') {
 
-            // Move cursor to the end of the line
-            cursorPosition = replConsole.value.length;
-
             // Replace it with CRLF
             key = "\r\n";
+
+            // End key
+            queueReplData("\x1B[F");
         }
 
         // Send the keypress
@@ -282,7 +282,10 @@
                 case 'Backspace':
 
                     // Send a bunch of backspaces to clear the whole line
-                    queueReplData("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+                    queueReplData(
+                        "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
+                        "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
+                        "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -293,10 +296,8 @@
                 // In the case of Meta-right
                 case 'ArrowRight':
 
-                    // Send a bunch of right arrow keys
-                    queueReplData("\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
-                        "\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C" +
-                        "\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C\x1B[C");
+                    // End key
+                    queueReplData("\x1B[F");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
@@ -307,10 +308,8 @@
                 // In the case of Meta-left
                 case 'ArrowLeft':
 
-                    // Send a bunch of left arrow keys
-                    queueReplData("\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
-                        "\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D" +
-                        "\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D\x1B[D");
+                    // Home key
+                    queueReplData("\x1B[H");
 
                     // Prevent any action in the REPL console
                     event.preventDefault();
