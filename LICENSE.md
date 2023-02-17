@@ -1,6 +1,6 @@
 ISC License
 
-Copyright 2022 Silicon Witchery AB.
+Copyright 2023 Silicon Witchery AB.
 
 Permission to use, copy, modify, and/or distribute this software for any purpose 
 with or without fee is hereby granted, provided that the above copyright notice 
