@@ -1,24 +1,26 @@
-// Global device and characteristic objects
-let device = null;
-let uartRxCharacteristic = null;
-let uartTxCharacteristic = null;
-let rawDataRxCharacteristic = null;
-let rawDataTxCharacteristic = null;
+var device = null;
+var replRxCharacteristic = null;
+var replTxCharacteristic = null;
+var rawDataRxCharacteristic = null;
+var rawDataTxCharacteristic = null;
 
-// UUIDs for UART service and characteristics
-let nordicUartServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-let uartRxCharacteristicUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-let uartTxCharacteristicUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+const replDataServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+const replRxCharacteristicUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+const replTxCharacteristicUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
-// UUIDs for raw data service and characteristics
-let rawDataServiceUuid = "e5700001-7bac-429a-b4ce-57ff900f479d";
-let rawDataRxCharacteristicUuid = "e5700002-7bac-429a-b4ce-57ff900f479d";
-let rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
+const rawDataServiceUuid = "e5700001-7bac-429a-b4ce-57ff900f479d";
+const rawDataRxCharacteristicUuid = "e5700002-7bac-429a-b4ce-57ff900f479d";
+const rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
+
+const replDataTxQueue = [];
+const rawDataTxQueue = [];
+
+var replDataTxInProgress = false;
+var rawDataTxInProgress = false;
 
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
-const mtu = 100;
+const max_mtu = 100;
 
-// Promise function to check if bluetooth is available on the browser
 function isWebBluetoothAvailable() {
     return new Promise((resolve, reject) => {
         navigator.bluetooth
@@ -27,79 +29,107 @@ function isWebBluetoothAvailable() {
     });
 }
 
-// Function to connect and disconnect, returning status as promise
 async function connectDisconnect() {
     try {
-        // First ensure web bluetooth is available
+
         await isWebBluetoothAvailable();
 
-        // Disconnect if connected
-        if (device) {
-            if (device.gatt.connected) {
-                await device.gatt.disconnect();
-                return Promise.resolve("disconnected");
-            }
+        // If already connected, disconnect
+        if (device && device.gatt.connected) {
+
+            await device.gatt.disconnect();
+
+            // Stop transmitting data
+            clearInterval(transmitReplData);
+
+            return Promise.resolve("disconnected");
         }
 
-        // Otherwise connect
+        // Otherwise bring up the device window
         device = await navigator.bluetooth.requestDevice({
+
             filters: [{
-                services: [nordicUartServiceUuid]
-            }]
+                services: [replDataServiceUuid]
+            }],
+            optionalServices: [rawDataServiceUuid]
         });
 
         // Handler to watch for device being disconnected due to loss of connection
         device.addEventListener('gattserverdisconnected', disconnectHandler);
 
-        // Connect to the device and get the services and characteristics
         const server = await device.gatt.connect();
-        const service = await server.getPrimaryService(nordicUartServiceUuid);
-        uartRxCharacteristic = await service.getCharacteristic(uartRxCharacteristicUuid);
-        uartTxCharacteristic = await service.getCharacteristic(uartTxCharacteristicUuid);
 
-        // Start notifications on the receiving characteristic and create handlers
-        await uartTxCharacteristic.startNotifications();
-        uartTxCharacteristic.addEventListener('characteristicvaluechanged', receiveUartData);
+        // Set up the REPL characteristics
+        const replService = await server.getPrimaryService(replDataServiceUuid);
 
-        // Connected as unsecure method
+        replRxCharacteristic = await replService.getCharacteristic(replRxCharacteristicUuid);
+        replTxCharacteristic = await replService.getCharacteristic(replTxCharacteristicUuid);
+        await replTxCharacteristic.startNotifications();
+        replTxCharacteristic.addEventListener('characteristicvaluechanged', receiveReplData);
+
+        // Try to set up the raw data characteristics if the service is available
+        const rawDataService = await server.getPrimaryService(rawDataServiceUuid)
+            .catch(error => {
+                console.log("Raw data service is not available on this device");
+            });
+
+        if (rawDataService) {
+            rawDataRxCharacteristic = await rawDataService.getCharacteristic(rawDataRxCharacteristicUuid);
+            rawDataTxCharacteristic = await rawDataService.getCharacteristic(rawDataTxCharacteristicUuid);
+            await rawDataTxCharacteristic.startNotifications();
+            rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
+        }
+
+        // Start sending data
+        setInterval(transmitReplData);
+
         return Promise.resolve("connected");
 
     } catch (error) {
 
-        // Return error if there is any
         return Promise.reject(error);
     }
 }
 
-// Function to transmit serial data to the device
-async function sendUartData(string) {
+function queueReplData(string) {
 
-    // Encode the UTF-8 string into an array
-    let encoder = new TextEncoder('utf-8');
-    let data = encoder.encode(string);
+    // Encode the UTF-8 string into an array and populate the buffer
+    const encoder = new TextEncoder('utf-8');
+    replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
+}
 
-    // Break the string up into mtu sized packets
-    for (let chunk = 0; chunk < Math.ceil(data.length / mtu); chunk++) {
+async function transmitReplData() {
 
-        // Calculate the start and end according to the chunk number
-        let start = mtu * chunk;
-        let end = mtu * (chunk + 1);
-
-        // Send each slice of data (the partial last chunk is safely handled with slice)
-        await uartRxCharacteristic.writeValueWithResponse(data.slice(start, end))
-            .catch(error => {
-
-                // If there was an operation already ongoing
-                if (error == "NetworkError: GATT operation already in progress.") {
-
-                    // Try to send the again
-                    sendUartData(string);
-                }
-                else {
-
-                    // Return any other error that may happen
-                    return Promise.reject(error);
-                }
-            });
+    if (replDataTxInProgress === true) {
+        return;
     }
+
+    if (replDataTxQueue.length === 0) {
+        return;
+    }
+
+    replDataTxInProgress = true;
+
+    const payload = replDataTxQueue.slice(0, max_mtu);
+
+    await replRxCharacteristic.writeValueWithoutResponse(new Uint8Array(payload))
+        .then(value => {
+            replDataTxQueue.splice(0, payload.length);
+            replDataTxInProgress = false;
+            return;
+        })
+
+        .catch(error => {
+
+            if (error == "NetworkError: GATT operation already in progress.") {
+                // Ignore busy errors. Just wait and try again later
+            }
+            else {
+                // Discard data on other types of error
+                replDataTxQueue.splice(0, payload.length);
+                replDataTxInProgress = false;
+                return Promise.reject(error);
+            }
+        });
+
 }
