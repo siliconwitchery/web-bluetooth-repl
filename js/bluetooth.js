@@ -1,3 +1,5 @@
+import { disconnectHandler, receiveReplData, receiveRawData } from "./main.js"
+
 var device = null;
 var replRxCharacteristic = null;
 var replTxCharacteristic = null;
@@ -29,7 +31,7 @@ function isWebBluetoothAvailable() {
     });
 }
 
-async function connectDisconnect() {
+export async function connectDisconnect() {
     try {
 
         await isWebBluetoothAvailable();
@@ -91,7 +93,7 @@ async function connectDisconnect() {
     }
 }
 
-function queueReplData(string) {
+export function queueReplData(string) {
 
     // Encode the UTF-8 string into an array and populate the buffer
     const encoder = new TextEncoder('utf-8');
