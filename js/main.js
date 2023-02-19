@@ -33,6 +33,9 @@ var gitRepoLink = "";
 
 connectButton.addEventListener('click', () => {
 
+    // Prepare for automated command handling
+    catchResponseFlag = true;
+
     connectDisconnect()
         .then(result => {
             if (result === "connected") {
@@ -50,7 +53,6 @@ connectButton.addEventListener('click', () => {
                 bluetoothIcon.src = "/images/bluetooth-icon.svg"
 
                 // Enter raw REPL mode to get device info and suggest updates
-                catchResponseFlag = true;
                 queueReplData("\x03"); // Send Ctrl-C to clear the prompt
                 queueReplData("\x01"); // Send Ctrl-A to enter RAW mode
                 queueReplData("import device\r\n");
