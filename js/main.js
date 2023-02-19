@@ -305,7 +305,8 @@ async function processCaughtResponse(string) {
 
     let exitRawReplModeFlag = false;
 
-    if (string.includes("no attribute 'GIT_REPO'")) {
+    if (string.includes("no module named 'device'") ||
+        string.includes("no attribute 'GIT_REPO'")) {
 
         infoText.innerText = "Could not automatically detect the device. " +
             "Automation features may not be available. Be sure to update " +
