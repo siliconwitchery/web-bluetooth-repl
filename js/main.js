@@ -53,7 +53,8 @@ connectButton.addEventListener('click', () => {
                 catchResponseFlag = true;
                 queueReplData("\x03"); // Send Ctrl-C to clear the prompt
                 queueReplData("\x01"); // Send Ctrl-A to enter RAW mode
-                queueReplData("import device;print(device.GIT_REPO)\r\n")
+                queueReplData("import device\r\n");
+                queueReplData("print(device.GIT_REPO)\r\n");
                 queueReplData("\x04"); // Send Ctrl-D to execute
             }
         })
@@ -98,7 +99,7 @@ clearButton.addEventListener('click', () => {
     replConsole.focus();
 });
 
-replConsole.onkeydown = (event) => {
+replConsole.addEventListener('keydown', (event) => {
 
     if (event.ctrlKey) {
         switch (event.key) {
@@ -209,11 +210,12 @@ replConsole.onkeydown = (event) => {
 
     // Don't print characters to the REPL console because the response will print it for us
     event.preventDefault();
-}
-
+});
 
 replConsole.addEventListener('beforeinput', (event) => {
+
     queueReplData(event.data.replaceAll('\n', '\r\n'))
+
     event.preventDefault();
 });
 
@@ -296,9 +298,10 @@ export function receiveRawData(event) {
     console.log(event.target.value);
 }
 
-function processCaughtResponse(string) {
+async function processCaughtResponse(string) {
 
-    console.log("Received raw repl: " + string);
+    console.log("Background REPL response");
+    console.log(string);
 
     let exitRawReplModeFlag = false;
 
@@ -311,45 +314,55 @@ function processCaughtResponse(string) {
         exitRawReplModeFlag = true;
     }
 
-    if (string.includes("OKhttps://github.com/")) {
+    if (string.includes("https://github.com/")) {
 
         gitRepoLink = string.substring(string.indexOf("https"),
             string.lastIndexOf('\r\n'));
 
-        console.log(gitRepoLink);
-
-        // Use the repo link to get the latest git tag
-        let gitOwnerAndRepo = string.substring(
-            string.indexOf('github.com'),
-            string.lastIndexOf('\r\n')).split('/');
-
         let owner = gitRepoLink.split('/')[3];
         let repo = gitRepoLink.split('/')[4];
 
-        getLatestGitTag(owner, repo).then(value => {
-            latestGitTag = value;
-        });
+        latestGitTag = await getLatestGitTag(owner, repo);
 
         // Check the device version
-        queueReplData("print(device.VERSION)\r\n");
+        queueReplData("print('VERSION='+device.VERSION)\r\n");
         queueReplData("\x04");
     }
 
-    if (string.includes("OKv")) {
+    if (string.includes("VERSION=")) {
 
-        let currentVersion = string.substring(string.indexOf("OKv") + 2,
-            string.lastIndexOf("\r\n"));
-
-        console.log("Current Version is: " + currentVersion);
-        console.log("New Version is: " + latestGitTag);
+        let currentVersion =
+            string.substring(string.indexOf("OKv") + 2, string.lastIndexOf("\r\n"));
 
         if ((currentVersion != latestGitTag) &&
             gitRepoLink.includes("monocle")) {
+
+            // Show update message on the display
+            queueReplData("import display\r\n");
+            queueReplData("display.text('New firmware available',100,180,0xffffff)\r\n");
+            queueReplData("display.show()\r\n");
+            queueReplData("print('NOTIFIED UPDATE')\r\n");
+            queueReplData("\x04");
+
             infoText.innerHTML = "New firmware <a href='" + gitRepoLink +
                 "/releases/latest' target='_blank'>(" + latestGitTag +
-                ")</a> available. Click <a href='#' onclick='queueReplData(\"import update;update.micropython();\x04\")'>here</a> to update.";
+                ")</a> available. Click <a href='#' " +
+                "onclick='startMonocleFirmwareUpdate();return false;'>" +
+                "here</a> to update.";
         }
 
+        else {
+            infoText.innerHTML = "";
+        }
+    }
+
+    if (string.includes("NOTIFIED UPDATE")) {
+        // Wait until the previous commands are fully processed
+        exitRawReplModeFlag = true;
+    }
+
+    if (string.includes("UPDATE STARTED")) {
+        // Wait until the update commands are fully processed
         exitRawReplModeFlag = true;
     }
 
@@ -360,10 +373,27 @@ function processCaughtResponse(string) {
         cursorPosition = 0;
 
         queueReplData("\x03"); // Send Ctrl-C to clear the prompt
-        queueReplData("\x02"); // Send Ctrl-A to enter RAW mode
+        queueReplData("\x02"); // Send Ctrl-B to enter friendly mode
 
         catchResponseFlag = false;
     }
+}
+
+window.startMonocleFirmwareUpdate = () => {
+
+    catchResponseFlag = true;
+
+    queueReplData("\x03"); // Send Ctrl-C to clear the prompt
+    queueReplData("\x01"); // Send Ctrl-A to enter RAW mode
+
+    queueReplData("import display\r\n");
+    queueReplData("display.text('Updating firmware...',120,180,0xffffff)\r\n");
+    queueReplData("display.show()\r\n");
+    queueReplData("import update\r\n");
+    queueReplData("update.micropython()\r\n");
+    queueReplData("print('UPDATE STARTED')\r\n");
+
+    queueReplData("\x04"); // Send Ctrl-D to execute
 }
 
 export function disconnectHandler() {
