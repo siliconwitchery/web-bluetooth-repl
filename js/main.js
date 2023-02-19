@@ -1,7 +1,7 @@
 import { connectDisconnect, queueReplData } from "./bluetooth.js";
 import { getLatestGitTag } from "./gitutils.js";
 
-window.addEventListener("load", (event) => {
+window.addEventListener("load", () => {
     replConsole.placeholder =
         "Welcome to the MicroPython Web REPL. Connect via Bluetooth using the button below.\n\n" +
         "Currently, only Chrome desktop supports Web Bluetooth which is used here.\n\n" +
@@ -13,6 +13,12 @@ const infoText = document.getElementById('infoText');
 const replConsole = document.getElementById('replConsole');
 const connectButton = document.getElementById('connectButton');
 const controlButtons = document.getElementsByName('controlButton');
+const ctrlAButton = document.getElementById('ctrlAButton');
+const ctrlBButton = document.getElementById('ctrlBButton');
+const ctrlCButton = document.getElementById('ctrlCButton');
+const ctrlDButton = document.getElementById('ctrlDButton');
+const ctrlEButton = document.getElementById('ctrlEButton');
+const clearButton = document.getElementById('clearButton');
 
 // Variable for keeping track of the current cursor position
 var cursorPosition = 0;
@@ -58,158 +64,158 @@ connectButton.addEventListener('click', () => {
 
             console.error(error);
         })
-})
+});
 
+ctrlAButton.addEventListener('click', () => {
+    queueReplData('\x01');
+    replConsole.focus()
+});
 
-replConsole.onkeypress = (event) => {
+ctrlBButton.addEventListener('click', () => {
+    queueReplData('\x02');
+    replConsole.focus()
+});
 
-    // Create a mutable copy of the event.key value
-    let key = event.key;
+ctrlCButton.addEventListener('click', () => {
+    queueReplData('\x03');
+    replConsole.focus()
+});
 
-    if (key === 'Enter') {
+ctrlDButton.addEventListener('click', () => {
+    queueReplData('\x04');
+    replConsole.focus()
+});
 
-        key = "\r\n";
+ctrlEButton.addEventListener('click', () => {
+    queueReplData('\x05');
+    replConsole.focus()
+});
 
-        queueReplData("\x1B[F"); // Send End key before sending \r\n
+clearButton.addEventListener('click', () => {
+    replConsole.value = '';
+    cursorPosition = 0;
+    queueReplData('\x03');
+    replConsole.focus();
+});
+
+replConsole.onkeydown = (event) => {
+
+    if (event.ctrlKey) {
+        switch (event.key) {
+
+            case 'a':
+                queueReplData("\x01"); // Send Ctrl-A
+                break;;
+
+            case 'b':
+                queueReplData("\x02"); // Send Ctrl-B
+                break;;
+
+            case 'c':
+                queueReplData("\x03"); // Send Ctrl-C
+                break;;
+
+            case 'd':
+                queueReplData("\x04"); // Send Ctrl-D
+                break;;
+
+            case 'e':
+                queueReplData("\x05"); // Send Ctrl-E
+                break;;
+
+            case 'v':
+                // Allow pasting
+                return;
+        }
+
+        event.preventDefault();
+        return;
     }
 
-    queueReplData(key)
+    if (event.metaKey) {
+        switch (event.key) {
+
+            case 'k':
+                replConsole.value = "";
+                cursorPosition = 0;
+                queueReplData("\x03"); // Send Ctrl-C
+                break;
+
+            case 'c':
+                // Allow copy
+                return;
+
+            case 'v':
+                // Allow pasting
+                return;
+
+            case 'Backspace':
+                queueReplData(
+                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
+                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
+                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+                break;
+
+            case 'ArrowRight':
+                queueReplData("\x1B[F"); // Send End key
+                break;
+
+            case 'ArrowLeft':
+                queueReplData("\x1B[H"); // Send Home key
+                break;
+        }
+
+        event.preventDefault();
+        return;
+    }
+
+    switch (event.key) {
+
+        case 'Backspace':
+            queueReplData("\x08"); // Send backspace
+            break;
+
+        case 'ArrowUp':
+            queueReplData("\x1B[A"); // Send up arrow key
+            break;
+
+        case 'ArrowDown':
+            queueReplData("\x1B[B"); // Send down arrow key
+            break;
+
+        case 'ArrowRight':
+            queueReplData("\x1B[C"); // Send right arrow key
+            break;
+
+        case 'ArrowLeft':
+            queueReplData("\x1B[D"); // Send left arrow key
+            break;
+
+        case 'Tab':
+            queueReplData("\x09"); // Send Tab key
+            break;
+
+        case 'Enter':
+            queueReplData("\x1B[F\r\n"); // Send End key before sending \r\n
+            break;
+
+        default:
+            // Only printable keys
+            if (event.key.length == 1) {
+                queueReplData(event.key)
+            }
+            break;
+    }
 
     // Don't print characters to the REPL console because the response will print it for us
     event.preventDefault();
 }
 
-// Whenever keys such as Ctrl, Tab or Backspace are pressed/held
-replConsole.onkeydown = (event) => {
 
-    // If Ctrl is held
-    if (event.ctrlKey) {
-        switch (event.key) {
-
-            case 'a':
-
-                queueReplData("\x01"); // Send Ctrl-A
-                event.preventDefault(); // Prevent select all
-                return;
-
-            case 'b':
-
-                queueReplData("\x02"); // Send Ctrl-B
-                event.preventDefault();
-                return;
-
-            case 'c':
-
-                queueReplData("\x03"); // Send Ctrl-C
-                event.preventDefault(); // Prevent copy
-                return;
-
-            case 'd':
-
-                queueReplData("\x04"); // Send Ctrl-D
-                event.preventDefault();
-                return;
-
-            case 'e':
-
-                queueReplData("\x05"); // Send Ctrl-E
-                event.preventDefault();
-                return;
-        }
-    }
-
-    // If the meta/command key is held
-    if (event.metaKey) {
-        switch (event.key) {
-
-            case 'k':
-
-                replConsole.value = "";
-                cursorPosition = 0;
-                queueReplData("\x03"); // Send Ctrl-C
-                event.preventDefault();
-                return;
-
-            case 'Backspace':
-
-                queueReplData(
-                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
-                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
-                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-                event.preventDefault();
-                return;
-
-            case 'ArrowRight':
-
-                queueReplData("\x1B[F"); // Send End key
-                event.preventDefault();
-                return;
-
-            case 'ArrowLeft':
-
-                queueReplData("\x1B[H"); // Send Home key
-                event.preventDefault();
-                return;
-        }
-    }
-
-    if (event.key === 'Backspace') {
-
-        queueReplData("\x08"); // Send backspace
-        event.preventDefault();
-        return;
-    }
-
-    if (event.key === 'ArrowUp') {
-
-        queueReplData("\x1B[A"); // Send up arrow key
-        event.preventDefault();
-        return;
-    }
-
-    if (event.key === 'ArrowDown') {
-
-        queueReplData("\x1B[B"); // Send down arrow key
-        event.preventDefault();
-        return;
-    }
-
-    if (event.key === 'ArrowRight') {
-
-        queueReplData("\x1B[C"); // Send right arrow key
-        event.preventDefault();
-        return;
-    }
-
-    if (event.key === 'ArrowLeft') {
-
-        queueReplData("\x1B[D"); // Send left arrow key
-        event.preventDefault();
-        return;
-    }
-
-    if (event.key === 'Tab') {
-
-        queueReplData("\x09"); // Send Tab key
-        event.preventDefault();
-        return;
-    }
-}
-
-function pasteEvent() {
-
-    navigator.clipboard.readText()
-        .then(text => {
-
-            // Micropython requires \r\n
-            queueReplData(text.replace('\n', '\r\n'))
-        })
-
-        .catch(() => {
-
-            alert("Could not paste. Did you allow clipboard permissions?");
-        });
-}
+replConsole.addEventListener('beforeinput', (event) => {
+    queueReplData(event.data.replaceAll('\n', '\r\n'))
+    event.preventDefault();
+});
 
 export function receiveReplData(event) {
 
@@ -344,7 +350,7 @@ function processCaughtResponse(string) {
                 ")</a> available. Click <a href='#' onclick='queueReplData(\"import update;update.micropython();\x04\")'>here</a> to update.";
         }
 
-        // exitRawReplModeFlag = true;
+        exitRawReplModeFlag = true;
     }
 
     if (exitRawReplModeFlag) {
@@ -370,5 +376,3 @@ export function disconnectHandler() {
         ele.disabled = true;
     })
 }
-
-window.queueReplData = queueReplData;

@@ -47,30 +47,38 @@
 
         <!-- REPL console -->
         <textarea type="text" id="replConsole" rows=20 autocomplete="off" autocorrect="off" autocapitalize="off"
-            spellcheck="false" placeholder="" onpaste="pasteEvent();event.preventDefault()"></textarea>
+            spellcheck="false"></textarea>
 
         <!-- Buttons -->
-        <div class="buttons">
+        <div class=" buttons">
 
-            <button id="connectButton" title="Open Bluetooth connection pane">Connect</button>
+            <button id="connectButton" title="Open Bluetooth connection pane">
+                Connect
+            </button>
 
-            <button onclick="queueReplData('\x01'); replConsole.focus()" name="controlButton" disabled
-                title="Enter raw REPL mode (Ctrl-A)">Ctrl-A</button>
+            <button id="ctrlAButton" name="controlButton" title="Raw REPL mode" disabled>
+                Ctrl-A
+            </button>
 
-            <button onclick="queueReplData('\x02'); replConsole.focus()" name="controlButton" disabled
-                title="Enter normal REPL mode (Ctrl-B)">Ctrl-B</button>
+            <button id="ctrlBButton" name="controlButton" title="Friendly REPL mode" disabled>
+                Ctrl-B
+            </button>
 
-            <button onclick="queueReplData('\x03'); replConsole.focus()" name="controlButton" disabled
-                title="Interrupt a running program (Ctrl-C)">Ctrl-C</button>
+            <button id="ctrlCButton" name="controlButton" title="Clear line / Exit paste mode" disabled>
+                Ctrl-C
+            </button>
 
-            <button onclick="queueReplData('\x04'); replConsole.focus()" name="controlButton" disabled
-                title="Reset the device (Ctrl-D)">Ctrl-D</button>
+            <button id="ctrlDButton" name="controlButton" title="Reset / Run Pasted code" disabled>
+                Ctrl-D
+            </button>
 
-            <button onclick="queueReplData('\x05'); replConsole.focus()" name="controlButton" disabled
-                title="Enter paste mode (Ctrl-E)">Ctrl-E</button>
+            <button id="ctrlEButton" name="controlButton" title="Paste mode" disabled>
+                Ctrl-E
+            </button>
 
-            <button onclick="replConsole.value = ''; cursorPosition = 0; queueReplData('\x03'); replConsole.focus()"
-                title="Clear console (Cmd-k or Ctrl-k)">Clear</button>
+            <button id="clearButton" name="controlButton" title="Clear entire terminal" disabled>
+                Ctrl-K
+            </button>
 
         </div>
 
