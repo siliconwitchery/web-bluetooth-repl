@@ -115,7 +115,7 @@ async function transmitReplData() {
     const payload = replDataTxQueue.slice(0, max_mtu);
 
     await replRxCharacteristic.writeValueWithoutResponse(new Uint8Array(payload))
-        .then(value => {
+        .then(() => {
             replDataTxQueue.splice(0, payload.length);
             replDataTxInProgress = false;
             return;
@@ -135,3 +135,15 @@ async function transmitReplData() {
         });
 
 }
+
+export async function transmitRawData(bytes) {
+    await rawDataRxCharacteristic.writeValueWithoutResponse(new Uint8Array(bytes))
+        .then(() => {
+            console.log("Sent: ", bytes);
+        })
+        .catch(error => {
+            return Promise.reject(error);
+        })
+}
+
+window.transmitRawData = transmitRawData;
