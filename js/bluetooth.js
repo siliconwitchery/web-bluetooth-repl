@@ -16,7 +16,7 @@ const rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
 
 const replDataTxQueue = [];
 const rawDataTxQueue = [];
-
+let inetrvalId = null
 var replDataTxInProgress = false;
 var rawDataTxInProgress = false;
 
@@ -42,7 +42,7 @@ export async function connectDisconnect() {
             await device.gatt.disconnect();
 
             // Stop transmitting data
-            clearInterval(transmitReplData);
+            clearInterval(inetrvalId);
 
             return Promise.resolve("disconnected");
         }
@@ -83,7 +83,7 @@ export async function connectDisconnect() {
         }
 
         // Start sending data
-        setInterval(transmitReplData);
+        inetrvalId = setInterval(transmitReplData);
 
         return Promise.resolve("connected");
 
@@ -101,7 +101,6 @@ export function queueReplData(string) {
 }
 
 async function transmitReplData() {
-
     if (replDataTxInProgress === true) {
         return;
     }
