@@ -277,7 +277,7 @@ async function transmitReplData() {
                     await this.device.gatt.disconnect();
                     // Stop thread data
                     clearInterval(intervalId);
-                    
+                    sendDataCallStacks = []
                     return Promise.resolve("disconnected");
                 }
                 // set default services
@@ -329,6 +329,7 @@ async function transmitReplData() {
                 this.device.addEventListener('gattserverdisconnected', ()=>{
                     this.isConnected = false
                     if(obj.onDisconnect)  obj.onDisconnect();
+                    sendDataCallStacks = []
                     
                 });
                 
