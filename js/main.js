@@ -335,7 +335,7 @@ async function processCaughtResponse(string) {
     if (string.includes("VERSION=")) {
 
         let currentVersion =
-            string.substring(string.indexOf("OKv") + 2, string.lastIndexOf("\r\n"));
+            string.substring(string.indexOf("=v") + 1, string.lastIndexOf("\r\n"));
 
         if ((currentVersion != latestGitTag) &&
             gitRepoLink.includes("monocle")) {
@@ -356,6 +356,7 @@ async function processCaughtResponse(string) {
 
         else {
             infoText.innerHTML = "";
+            exitRawReplModeFlag = true;
         }
     }
 
