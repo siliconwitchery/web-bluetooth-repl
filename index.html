@@ -26,6 +26,9 @@
 
     <!-- Import javascript -->
     <script type="module" src="./js/main2.js"></script>
+    <script type="text/javascript" src="./js/jsZip.min.js"></script>
+    <script type="text/javascript" src="./js/crc32.min.js"></script>
+    <script type="text/javascript" src="./js/secure-dfu.js"></script>
     <script type="text/javascript" src="./js/ble.js"></script>
 
 </head>
@@ -42,7 +45,7 @@
         <p id="infoText"></p>
 
         <!-- REPL console -->
-        <textarea type="text" id="replConsole" rows=20 autocomplete="off" autocorrect="off" autocapitalize="off"
+        <textarea type="text" id="replConsole" class="replCtrlBtn replInput" rows=20 autocomplete="off" autocorrect="off" autocapitalize="off"
             spellcheck="false"></textarea>
 
         <!-- Buttons -->
@@ -52,27 +55,27 @@
                 Connect
             </button>
 
-            <button id="ctrlAButton" name="controlButton" title="Raw REPL mode" disabled>
+            <button id="ctrlAButton" name="controlButton" class="replCtrlBtn ctrlA" title="Raw REPL mode" disabled>
                 Ctrl-A
             </button>
 
-            <button id="ctrlBButton" name="controlButton" title="Friendly REPL mode" disabled>
+            <button id="ctrlBButton" name="controlButton" class="replCtrlBtn ctrlB" title="Friendly REPL mode" disabled>
                 Ctrl-B
             </button>
 
-            <button id="ctrlCButton" name="controlButton" title="Clear line / Exit paste mode" disabled>
+            <button id="ctrlCButton" name="controlButton" class="replCtrlBtn ctrlC" title="Clear line / Exit paste mode" disabled>
                 Ctrl-C
             </button>
 
-            <button id="ctrlDButton" name="controlButton" title="Reset / Run Pasted code" disabled>
+            <button id="ctrlDButton" name="controlButton" class="replCtrlBtn ctrlD" title="Reset / Run Pasted code" disabled>
                 Ctrl-D
             </button>
 
-            <button id="ctrlEButton" name="controlButton" title="Paste mode" disabled>
+            <button id="ctrlEButton" name="controlButton" class="replCtrlBtn ctrlE" title="Paste mode" disabled>
                 Ctrl-E
             </button>
 
-            <button id="clearButton" name="controlButton" title="Clear entire terminal" disabled>
+            <button id="clearButton" name="controlButton" class="" title="Clear entire terminal" disabled>
                 Ctrl-K
             </button>
 

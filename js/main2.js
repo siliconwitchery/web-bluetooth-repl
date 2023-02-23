@@ -1,14 +1,15 @@
 // import { bluetooth } from "./ble";
 import { getLatestGitTag } from "./gitutils.js";
 
+let proxy_api = "https://api.brilliant.xyz/firmware?url="
 var bluetooth = window.bluetooth
+let packageUrl = proxy_api + "https://github.com/brilliantlabsAR/monocle-micropython/releases/download/v23.048.1010/monocle-micropython-v23.048.1010.zip"
+bluetooth.firmWarePackage = packageUrl
+// var replDataTxQueue = []
 
-var replDataTxQueue = []
 function queueReplData(string) {
-
-        // Encode the UTF-8 string into an array and populate the buffer
-        const encoder = new TextEncoder('utf-8');
-        replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
+        // replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
+        bluetooth.replDataTxQueue.push.apply(bluetooth.replDataTxQueue, bluetooth.encode(string));
 }
 
 window.addEventListener("load", () => {
@@ -23,11 +24,6 @@ const infoText = document.getElementById('infoText');
 const replConsole = document.getElementById('replConsole');
 const connectButton = document.getElementById('connectButton');
 const controlButtons = document.getElementsByName('controlButton');
-const ctrlAButton = document.getElementById('ctrlAButton');
-const ctrlBButton = document.getElementById('ctrlBButton');
-const ctrlCButton = document.getElementById('ctrlCButton');
-const ctrlDButton = document.getElementById('ctrlDButton');
-const ctrlEButton = document.getElementById('ctrlEButton');
 const clearButton = document.getElementById('clearButton');
 
 // Variable for keeping track of the current cursor position
@@ -51,7 +47,7 @@ connectButton.addEventListener('click', async () => {
         onRecieveRawData : receiveRawData,
         onDisconnect : disconnectHandler,
         onConnect:connectHandler,
-        replDataTxQueue: replDataTxQueue,
+        // replDataTxQueue: replDataTxQueue,
     }).then(result => {
             if (result === "connected") {
 
@@ -85,150 +81,150 @@ function connectHandler(){
     queueReplData("print(device.GIT_REPO)\r\n");
     queueReplData("\x04"); // Send Ctrl-D to execute
 }
-ctrlAButton.addEventListener('click', () => {
-    queueReplData('\x01');
-    replConsole.focus()
-});
+// ctrlAButton.addEventListener('click', () => {
+//     queueReplData('\x01');
+//     replConsole.focus()
+// });
 
-ctrlBButton.addEventListener('click', () => {
-    queueReplData('\x02');
-    replConsole.focus()
-});
+// ctrlBButton.addEventListener('click', () => {
+//     queueReplData('\x02');
+//     replConsole.focus()
+// });
 
-ctrlCButton.addEventListener('click', () => {
-    queueReplData('\x03');
-    replConsole.focus()
-});
+// ctrlCButton.addEventListener('click', () => {
+//     queueReplData('\x03');
+//     replConsole.focus()
+// });
 
-ctrlDButton.addEventListener('click', () => {
-    queueReplData('\x04');
-    replConsole.focus()
-});
+// ctrlDButton.addEventListener('click', () => {
+//     queueReplData('\x04');
+//     replConsole.focus()
+// });
 
-ctrlEButton.addEventListener('click', () => {
-    queueReplData('\x05');
-    replConsole.focus()
-});
+// ctrlEButton.addEventListener('click', () => {
+//     queueReplData('\x05');
+//     replConsole.focus()
+// });
 
-clearButton.addEventListener('click', () => {
-    replConsole.value = '';
-    cursorPosition = 0;
-    queueReplData('\x03');
-    replConsole.focus();
-});
+// clearButton.addEventListener('click', () => {
+//     replConsole.value = '';
+//     cursorPosition = 0;
+//     queueReplData('\x03');
+//     replConsole.focus();
+// });
 
-replConsole.addEventListener('keydown', (event) => {
+// replConsole.addEventListener('keydown', (event) => {
 
-    if (event.ctrlKey) {
-        switch (event.key) {
+//     if (event.ctrlKey) {
+//         switch (event.key) {
 
-            case 'a':
-                queueReplData("\x01"); // Send Ctrl-A
-                break;;
+//             case 'a':
+//                 queueReplData("\x01"); // Send Ctrl-A
+//                 break;;
 
-            case 'b':
-                queueReplData("\x02"); // Send Ctrl-B
-                break;;
+//             case 'b':
+//                 queueReplData("\x02"); // Send Ctrl-B
+//                 break;;
 
-            case 'c':
-                queueReplData("\x03"); // Send Ctrl-C
-                break;;
+//             case 'c':
+//                 queueReplData("\x03"); // Send Ctrl-C
+//                 break;;
 
-            case 'd':
-                queueReplData("\x04"); // Send Ctrl-D
-                break;;
+//             case 'd':
+//                 queueReplData("\x04"); // Send Ctrl-D
+//                 break;;
 
-            case 'e':
-                queueReplData("\x05"); // Send Ctrl-E
-                break;;
+//             case 'e':
+//                 queueReplData("\x05"); // Send Ctrl-E
+//                 break;;
 
-            case 'v':
-                // Allow pasting
-                return;
-        }
+//             case 'v':
+//                 // Allow pasting
+//                 return;
+//         }
 
-        event.preventDefault();
-        return;
-    }
+//         event.preventDefault();
+//         return;
+//     }
 
-    if (event.metaKey) {
-        switch (event.key) {
+//     if (event.metaKey) {
+//         switch (event.key) {
 
-            case 'k':
-                replConsole.value = "";
-                cursorPosition = 0;
-                queueReplData("\x03"); // Send Ctrl-C
-                break;
+//             case 'k':
+//                 replConsole.value = "";
+//                 cursorPosition = 0;
+//                 queueReplData("\x03"); // Send Ctrl-C
+//                 break;
 
-            case 'c':
-                // Allow copy
-                return;
+//             case 'c':
+//                 // Allow copy
+//                 return;
 
-            case 'v':
-                // Allow pasting
-                return;
+//             case 'v':
+//                 // Allow pasting
+//                 return;
 
-            case 'Backspace':
-                queueReplData(
-                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
-                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
-                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-                break;
+//             case 'Backspace':
+//                 queueReplData(
+//                     "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
+//                     "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
+//                     "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+//                 break;
 
-            case 'ArrowRight':
-                queueReplData("\x1B[F"); // Send End key
-                break;
+//             case 'ArrowRight':
+//                 queueReplData("\x1B[F"); // Send End key
+//                 break;
 
-            case 'ArrowLeft':
-                queueReplData("\x1B[H"); // Send Home key
-                break;
-        }
+//             case 'ArrowLeft':
+//                 queueReplData("\x1B[H"); // Send Home key
+//                 break;
+//         }
 
-        event.preventDefault();
-        return;
-    }
+//         event.preventDefault();
+//         return;
+//     }
 
-    switch (event.key) {
+//     switch (event.key) {
 
-        case 'Backspace':
-            queueReplData("\x08"); // Send backspace
-            break;
+//         case 'Backspace':
+//             queueReplData("\x08"); // Send backspace
+//             break;
 
-        case 'ArrowUp':
-            queueReplData("\x1B[A"); // Send up arrow key
-            break;
+//         case 'ArrowUp':
+//             queueReplData("\x1B[A"); // Send up arrow key
+//             break;
 
-        case 'ArrowDown':
-            queueReplData("\x1B[B"); // Send down arrow key
-            break;
+//         case 'ArrowDown':
+//             queueReplData("\x1B[B"); // Send down arrow key
+//             break;
 
-        case 'ArrowRight':
-            queueReplData("\x1B[C"); // Send right arrow key
-            break;
+//         case 'ArrowRight':
+//             queueReplData("\x1B[C"); // Send right arrow key
+//             break;
 
-        case 'ArrowLeft':
-            queueReplData("\x1B[D"); // Send left arrow key
-            break;
+//         case 'ArrowLeft':
+//             queueReplData("\x1B[D"); // Send left arrow key
+//             break;
 
-        case 'Tab':
-            queueReplData("\x09"); // Send Tab key
-            break;
+//         case 'Tab':
+//             queueReplData("\x09"); // Send Tab key
+//             break;
 
-        case 'Enter':
-            queueReplData("\x1B[F\r\n"); // Send End key before sending \r\n
-            break;
+//         case 'Enter':
+//             queueReplData("\x1B[F\r\n"); // Send End key before sending \r\n
+//             break;
 
-        default:
-            // Only printable keys
-            if (event.key.length == 1) {
-                queueReplData(event.key)
-            }
-            break;
-    }
+//         default:
+//             // Only printable keys
+//             if (event.key.length == 1) {
+//                 queueReplData(event.key)
+//             }
+//             break;
+//     }
 
-    // Don't print characters to the REPL console because the response will print it for us
-    event.preventDefault();
-});
+//     // Don't print characters to the REPL console because the response will print it for us
+//     event.preventDefault();
+// });
 
 replConsole.addEventListener('beforeinput', (event) => {
 
