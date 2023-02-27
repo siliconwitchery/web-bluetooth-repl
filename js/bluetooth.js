@@ -1,10 +1,11 @@
-import { disconnectHandler, receiveReplData, receiveRawData } from "./main.js"
+import { disconnectHandler, receiveRawData } from "./main.js"
+import { replHandleResponse } from "./repl.js";
 
-var device = null;
-var replRxCharacteristic = null;
-var replTxCharacteristic = null;
-var rawDataRxCharacteristic = null;
-var rawDataTxCharacteristic = null;
+let device = null;
+let replRxCharacteristic = null;
+let replTxCharacteristic = null;
+let rawDataRxCharacteristic = null;
+let rawDataTxCharacteristic = null;
 
 const replDataServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const replRxCharacteristicUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
@@ -14,11 +15,12 @@ const rawDataServiceUuid = "e5700001-7bac-429a-b4ce-57ff900f479d";
 const rawDataRxCharacteristicUuid = "e5700002-7bac-429a-b4ce-57ff900f479d";
 const rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
 
-const replDataTxQueue = [];
-const rawDataTxQueue = [];
-let inetrvalId = null
-var replDataTxInProgress = false;
-var rawDataTxInProgress = false;
+export const replDataTxQueue = [];
+export const rawDataTxQueue = [];
+
+let replTxTaskIntervalId = null
+let replDataTxInProgress = false;
+let rawDataTxInProgress = false;
 
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
 const max_mtu = 100;
@@ -42,7 +44,7 @@ export async function connectDisconnect() {
             await device.gatt.disconnect();
 
             // Stop transmitting data
-            clearInterval(inetrvalId);
+            clearInterval(replTxTaskIntervalId);
 
             return Promise.resolve("disconnected");
         }
@@ -83,7 +85,7 @@ export async function connectDisconnect() {
         }
 
         // Start sending data
-        inetrvalId = setInterval(transmitReplData);
+        replTxTaskIntervalId = setInterval(transmitReplData);
 
         return Promise.resolve("connected");
 
@@ -93,22 +95,16 @@ export async function connectDisconnect() {
     }
 }
 
-export function replSendRaw(string) {
+function receiveReplData(event) {
 
-    replSend("\x03"); // Send Ctrl-C to clear the prompt
-    replSend("\x01"); // Send Ctrl-A to enter RAW mode
-    replSend(string);
-    replSend("\x04"); // Send Ctrl-D to execute
-}
+    // Decode the byte array into a UTF-8 string
+    const decoder = new TextDecoder('utf-8');
 
-export function replSend(string) {
-
-    // Encode the UTF-8 string into an array and populate the buffer
-    const encoder = new TextEncoder('utf-8');
-    replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
+    replHandleResponse(decoder.decode(event.target.value));
 }
 
 async function transmitReplData() {
+
     if (replDataTxInProgress === true) {
         return;
     }
@@ -143,6 +139,7 @@ async function transmitReplData() {
 
 }
 
+// TODO
 export async function transmitRawData(bytes) {
     await rawDataRxCharacteristic.writeValueWithoutResponse(new Uint8Array(bytes))
         .then(() => {
