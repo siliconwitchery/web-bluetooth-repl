@@ -1,5 +1,5 @@
 import { replSend, replSendRaw } from "./repl.js";
-import { Octokit } from "https://cdn.skypack.dev/@octokit/core";
+import { request } from "https://cdn.skypack.dev/@octokit/request";
 
 export async function checkForUpdates() {
 
@@ -32,7 +32,12 @@ export async function checkForUpdates() {
     let owner = gitRepoLink.split('/')[3];
     let repo = gitRepoLink.split('/')[4];
 
-    let latestVersion = await getLatestGitTag(owner, repo);
+    const getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
+        owner: owner,
+        repo: repo
+    });
+
+    let latestVersion = getTag.data.tag_name;
 
     if (currentVersion === latestVersion) {
         return Promise.resolve("");
@@ -71,17 +76,4 @@ window.startMonocleFirmwareUpdate = () => {
     replSendRaw("import update");
     replSendRaw("update.micropython()");
     replSendRaw("print('UPDATE STARTED')");
-}
-
-async function getLatestGitTag(owner, repo) {
-
-    const octokit = new Octokit({});
-
-    const latestRelease =
-        await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
-            owner: owner,
-            repo: repo
-        });
-
-    return latestRelease.data.tag_name;
 }
