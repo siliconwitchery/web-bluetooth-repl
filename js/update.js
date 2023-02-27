@@ -6,25 +6,23 @@ export async function checkForUpdates() {
     let response = await replSendRaw("import device;print(device.VERSION)");
 
     if (response.includes("ImportError")) {
-
         replSend("\x03\x02"); // Exit to friendly repl
-
         return Promise.reject("Could not detect the firmware version. " +
             "You may have to update manually.");
     }
 
-    let currentVersion = response.substring(response.indexOf("v") + 1,
+    let currentVersion = response.substring(response.indexOf("v"),
         response.lastIndexOf("\r\n"));
 
     response = await replSendRaw("print(device.GIT_REPO)");
 
     if (response.includes("no attribute 'GIT_REPO'")) {
-
         replSend("\x03\x02"); // Exit to friendly repl
-
         return Promise.reject("Could not detect the device. Current version is" +
             currentVersion + ". You may have to update manually.");
     }
+
+    await replSendRaw("del(device)");
 
     let gitRepoLink = response.substring(response.indexOf("https"),
         response.lastIndexOf('\r\n'));
@@ -40,6 +38,7 @@ export async function checkForUpdates() {
     let latestVersion = getTag.data.tag_name;
 
     if (currentVersion === latestVersion) {
+        replSend("\x03\x02"); // Exit to friendly repl
         return Promise.resolve("");
     }
 
@@ -52,10 +51,7 @@ export async function checkForUpdates() {
         );
     }
 
-    await replSendRaw("del(device)");
-
-    replSend("\x03"); // Send Ctrl-C to clear the prompt
-    replSend("\x02"); // Send Ctrl-B to enter friendly mode
+    replSend("\x03\x02"); // Exit to friendly repl
 
     return Promise.resolve(
         "New firmware <a href='" +
