@@ -93,7 +93,15 @@ export async function connectDisconnect() {
     }
 }
 
-export function queueReplData(string) {
+export function replSendRaw(string) {
+
+    replSend("\x03"); // Send Ctrl-C to clear the prompt
+    replSend("\x01"); // Send Ctrl-A to enter RAW mode
+    replSend(string);
+    replSend("\x04"); // Send Ctrl-D to execute
+}
+
+export function replSend(string) {
 
     // Encode the UTF-8 string into an array and populate the buffer
     const encoder = new TextEncoder('utf-8');

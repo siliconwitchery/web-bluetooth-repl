@@ -1,4 +1,4 @@
-import { connectDisconnect, queueReplData } from "./bluetooth.js";
+import { connectDisconnect, replSend, replSendRaw } from "./bluetooth.js";
 import { getLatestGitTag } from "./gitutils.js";
 
 window.addEventListener("load", () => {
@@ -17,7 +17,6 @@ const ctrlAButton = document.getElementById('ctrlAButton');
 const ctrlBButton = document.getElementById('ctrlBButton');
 const ctrlCButton = document.getElementById('ctrlCButton');
 const ctrlDButton = document.getElementById('ctrlDButton');
-const ctrlEButton = document.getElementById('ctrlEButton');
 const clearButton = document.getElementById('clearButton');
 
 // Variable for keeping track of the current cursor position
@@ -52,12 +51,8 @@ connectButton.addEventListener('click', () => {
 
                 bluetoothIcon.src = "/images/bluetooth-icon.svg"
 
-                // Enter raw REPL mode to get device info and suggest updates
-                queueReplData("\x03"); // Send Ctrl-C to clear the prompt
-                queueReplData("\x01"); // Send Ctrl-A to enter RAW mode
-                queueReplData("import device\r\n");
-                queueReplData("print(device.GIT_REPO)\r\n");
-                queueReplData("\x04"); // Send Ctrl-D to execute
+                replSendRaw("import device");
+                replSendRaw("print(device.GIT_REPO)");
             }
         })
 
@@ -70,34 +65,29 @@ connectButton.addEventListener('click', () => {
 });
 
 ctrlAButton.addEventListener('click', () => {
-    queueReplData('\x01');
+    replSend('\x01');
     replConsole.focus()
 });
 
 ctrlBButton.addEventListener('click', () => {
-    queueReplData('\x02');
+    replSend('\x02');
     replConsole.focus()
 });
 
 ctrlCButton.addEventListener('click', () => {
-    queueReplData('\x03');
+    replSend('\x03');
     replConsole.focus()
 });
 
 ctrlDButton.addEventListener('click', () => {
-    queueReplData('\x04');
-    replConsole.focus()
-});
-
-ctrlEButton.addEventListener('click', () => {
-    queueReplData('\x05');
+    replSend('\x04');
     replConsole.focus()
 });
 
 clearButton.addEventListener('click', () => {
     replConsole.value = '';
     cursorPosition = 0;
-    queueReplData('\x03');
+    replSend('\x03');
     replConsole.focus();
 });
 
@@ -107,24 +97,24 @@ replConsole.addEventListener('keydown', (event) => {
         switch (event.key) {
 
             case 'a':
-                queueReplData("\x01"); // Send Ctrl-A
-                break;;
+                replSend("\x01"); // Send Ctrl-A
+                break;
 
             case 'b':
-                queueReplData("\x02"); // Send Ctrl-B
-                break;;
+                replSend("\x02"); // Send Ctrl-B
+                break;
 
             case 'c':
-                queueReplData("\x03"); // Send Ctrl-C
-                break;;
+                // If text is selected, copy instead of sending Ctrl-C
+                if (replConsole.selectionStart != replConsole.selectionEnd) {
+                    return;
+                }
+                replSend("\x03"); // Send Ctrl-C
+                break;
 
             case 'd':
-                queueReplData("\x04"); // Send Ctrl-D
-                break;;
-
-            case 'e':
-                queueReplData("\x05"); // Send Ctrl-E
-                break;;
+                replSend("\x04"); // Send Ctrl-D
+                break;
 
             case 'v':
                 // Allow pasting
@@ -141,7 +131,7 @@ replConsole.addEventListener('keydown', (event) => {
             case 'k':
                 replConsole.value = "";
                 cursorPosition = 0;
-                queueReplData("\x03"); // Send Ctrl-C
+                replSend("\x03"); // Send Ctrl-C
                 break;
 
             case 'c':
@@ -153,18 +143,18 @@ replConsole.addEventListener('keydown', (event) => {
                 return;
 
             case 'Backspace':
-                queueReplData(
+                replSend(
                     "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
                     "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
                     "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
                 break;
 
             case 'ArrowRight':
-                queueReplData("\x1B[F"); // Send End key
+                replSend("\x1B[F"); // Send End key
                 break;
 
             case 'ArrowLeft':
-                queueReplData("\x1B[H"); // Send Home key
+                replSend("\x1B[H"); // Send Home key
                 break;
         }
 
@@ -175,37 +165,37 @@ replConsole.addEventListener('keydown', (event) => {
     switch (event.key) {
 
         case 'Backspace':
-            queueReplData("\x08"); // Send backspace
+            replSend("\x08"); // Send backspace
             break;
 
         case 'ArrowUp':
-            queueReplData("\x1B[A"); // Send up arrow key
+            replSend("\x1B[A"); // Send up arrow key
             break;
 
         case 'ArrowDown':
-            queueReplData("\x1B[B"); // Send down arrow key
+            replSend("\x1B[B"); // Send down arrow key
             break;
 
         case 'ArrowRight':
-            queueReplData("\x1B[C"); // Send right arrow key
+            replSend("\x1B[C"); // Send right arrow key
             break;
 
         case 'ArrowLeft':
-            queueReplData("\x1B[D"); // Send left arrow key
+            replSend("\x1B[D"); // Send left arrow key
             break;
 
         case 'Tab':
-            queueReplData("\x09"); // Send Tab key
+            replSend("\x09"); // Send Tab key
             break;
 
         case 'Enter':
-            queueReplData("\x1B[F\r\n"); // Send End key before sending \r\n
+            replSend("\x1B[F\r\n"); // Send End key before sending \r\n
             break;
 
         default:
             // Only printable keys
             if (event.key.length == 1) {
-                queueReplData(event.key)
+                replSend(event.key)
             }
             break;
     }
@@ -216,7 +206,9 @@ replConsole.addEventListener('keydown', (event) => {
 
 replConsole.addEventListener('beforeinput', (event) => {
 
-    queueReplData(event.data.replaceAll('\n', '\r\n'))
+    // replace new lines with `\r` and a bunch of backspaces to clear tabs
+    replSend(event.data.replaceAll('\n',
+        '\r\n\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'));
 
     event.preventDefault();
 });
@@ -328,8 +320,7 @@ async function processCaughtResponse(string) {
         latestGitTag = await getLatestGitTag(owner, repo);
 
         // Check the device version
-        queueReplData("print('VERSION='+device.VERSION)\r\n");
-        queueReplData("\x04");
+        replSendRaw("print('VERSION='+device.VERSION)");
     }
 
     if (string.includes("VERSION=")) {
@@ -341,11 +332,10 @@ async function processCaughtResponse(string) {
             gitRepoLink.includes("monocle")) {
 
             // Show update message on the display
-            queueReplData("import display\r\n");
-            queueReplData("display.text('New firmware available',100,180,0xffffff)\r\n");
-            queueReplData("display.show()\r\n");
-            queueReplData("print('NOTIFIED UPDATE')\r\n");
-            queueReplData("\x04");
+            replSendRaw("import display");
+            replSendRaw("display.text('New firmware available',100,180,0xffffff)");
+            replSendRaw("display.show()");
+            replSendRaw("print('NOTIFIED UPDATE')");
 
             infoText.innerHTML = "New firmware <a href='" + gitRepoLink +
                 "/releases/latest' target='_blank'>(" + latestGitTag +
@@ -376,8 +366,8 @@ async function processCaughtResponse(string) {
         replConsole.value = '';
         cursorPosition = 0;
 
-        queueReplData("\x03"); // Send Ctrl-C to clear the prompt
-        queueReplData("\x02"); // Send Ctrl-B to enter friendly mode
+        replSend("\x03"); // Send Ctrl-C to clear the prompt
+        replSend("\x02"); // Send Ctrl-B to enter friendly mode
 
         catchResponseFlag = false;
     }
@@ -387,17 +377,12 @@ window.startMonocleFirmwareUpdate = () => {
 
     catchResponseFlag = true;
 
-    queueReplData("\x03"); // Send Ctrl-C to clear the prompt
-    queueReplData("\x01"); // Send Ctrl-A to enter RAW mode
-
-    queueReplData("import display\r\n");
-    queueReplData("display.text('Updating firmware...',120,180,0xffffff)\r\n");
-    queueReplData("display.show()\r\n");
-    queueReplData("import update\r\n");
-    queueReplData("update.micropython()\r\n");
-    queueReplData("print('UPDATE STARTED')\r\n");
-
-    queueReplData("\x04"); // Send Ctrl-D to execute
+    replSendRaw("import display");
+    replSendRaw("display.text('Updating firmware...',120,180,0xffffff)");
+    replSendRaw("display.show()");
+    replSendRaw("import update");
+    replSendRaw("update.micropython()");
+    replSendRaw("print('UPDATE STARTED')");
 }
 
 export function disconnectHandler() {
