@@ -1,6 +1,6 @@
 import { connectDisconnect } from "./bluetooth.js";
 import { replResetConsole, replSend } from "./repl.js";
-import { checkForUpdates } from "./update.js"
+import { checkForUpdates, startFirmwareUpdate } from "./update.js"
 
 window.addEventListener("load", () => {
     replConsole.placeholder =
@@ -26,26 +26,36 @@ connectButton.addEventListener('click', () => {
 
     connectDisconnect()
         .then(result => {
-            if (result === "connected") {
+
+            if (result === "dfu connected") {
+
+                connectButton.innerHTML = "Disconnect";
+                infoText.innerHTML = "TODO: Starting firmware update...";
+            }
+
+            if (result === "repl connected") {
 
                 replConsole.placeholder = "";
-
                 connectButton.innerHTML = "Disconnect";
 
                 controlButtons.forEach(element => {
                     element.disabled = false;
                 })
 
-                replResetConsole();
-                replConsole.focus()
-
                 checkForUpdates()
                     .then(value => {
-                        infoText.innerHTML = value;
+                        if (value != "") {
+                            infoText.innerHTML = value + " Click <a href='#' " +
+                                "onclick='update();return false;'>" +
+                                "here</a> to update.";
+                        }
                     })
                     .catch(error => {
                         infoText.innerHTML = error;
                     });
+
+                replResetConsole();
+                replConsole.focus()
 
                 bluetoothIcon.src = "/images/bluetooth-icon.svg"
             }
@@ -99,4 +109,9 @@ export function disconnectHandler() {
     controlButtons.forEach(element => {
         element.disabled = true;
     })
+}
+
+window.update = () => {
+    infoText.innerHTML = "Reconnect to the DFU device to begin the update.";
+    startFirmwareUpdate();
 }

@@ -1,5 +1,6 @@
 import { disconnectHandler, receiveRawData } from "./main.js"
 import { replHandleResponse } from "./repl.js";
+import { nordicDfuServiceUuid } from "./nordicdfu.js"
 
 let device = null;
 let replRxCharacteristic = null;
@@ -25,74 +26,63 @@ let rawDataTxInProgress = false;
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
 const max_mtu = 100;
 
-function isWebBluetoothAvailable() {
-    return new Promise((resolve, reject) => {
-        navigator.bluetooth
-            ? resolve()
-            : reject("Bluetooth not available on this browser. Are you using Chrome?");
-    });
-}
-
 export async function connectDisconnect() {
-    try {
 
-        await isWebBluetoothAvailable();
+    if (!navigator.bluetooth) {
+        return Promise.reject("This browser doesn't support WebBluetooth. " +
+            "Make sure you're on Chrome Desktop/Android or BlueFy iOS.")
+    }
 
-        // If already connected, disconnect
-        if (device && device.gatt.connected) {
+    if (device && device.gatt.connected) {
 
-            await device.gatt.disconnect();
+        await device.gatt.disconnect();
 
-            // Stop transmitting data
-            clearInterval(replTxTaskIntervalId);
+        // Stop transmitting data
+        clearInterval(replTxTaskIntervalId);
 
-            return Promise.resolve("disconnected");
-        }
+        return Promise.resolve("disconnected");
+    }
 
-        // Otherwise bring up the device window
-        device = await navigator.bluetooth.requestDevice({
+    device = await navigator.bluetooth.requestDevice({
 
-            filters: [{
-                services: [replDataServiceUuid]
-            }],
-            optionalServices: [rawDataServiceUuid]
-        });
+        filters: [
+            { services: [replDataServiceUuid] },
+            { services: [nordicDfuServiceUuid] },
+        ],
+        optionalServices: [rawDataServiceUuid]
+    });
 
-        // Handler to watch for device being disconnected due to loss of connection
-        device.addEventListener('gattserverdisconnected', disconnectHandler);
+    const server = await device.gatt.connect()
+    device.addEventListener('gattserverdisconnected', disconnectHandler);
 
-        const server = await device.gatt.connect();
+    const nordicDfuService = await server.getPrimaryService(nordicDfuServiceUuid)
+        .catch(() => { });
+    const replService = await server.getPrimaryService(replDataServiceUuid)
+        .catch(() => { });
+    const rawDataService = await server.getPrimaryService(rawDataServiceUuid)
+        .catch(() => { });
 
-        // Set up the REPL characteristics
-        const replService = await server.getPrimaryService(replDataServiceUuid);
+    if (nordicDfuService) {
 
+        return Promise.resolve("dfu connected");
+    }
+
+    if (replService) {
         replRxCharacteristic = await replService.getCharacteristic(replRxCharacteristicUuid);
         replTxCharacteristic = await replService.getCharacteristic(replTxCharacteristicUuid);
         await replTxCharacteristic.startNotifications();
         replTxCharacteristic.addEventListener('characteristicvaluechanged', receiveReplData);
-
-        // Try to set up the raw data characteristics if the service is available
-        const rawDataService = await server.getPrimaryService(rawDataServiceUuid)
-            .catch(error => {
-                console.log("Raw data service is not available on this device");
-            });
-
-        if (rawDataService) {
-            rawDataRxCharacteristic = await rawDataService.getCharacteristic(rawDataRxCharacteristicUuid);
-            rawDataTxCharacteristic = await rawDataService.getCharacteristic(rawDataTxCharacteristicUuid);
-            await rawDataTxCharacteristic.startNotifications();
-            rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
-        }
-
-        // Start sending data
         replTxTaskIntervalId = setInterval(transmitReplData);
-
-        return Promise.resolve("connected");
-
-    } catch (error) {
-
-        return Promise.reject(error);
     }
+
+    if (rawDataService) {
+        rawDataRxCharacteristic = await rawDataService.getCharacteristic(rawDataRxCharacteristicUuid);
+        rawDataTxCharacteristic = await rawDataService.getCharacteristic(rawDataTxCharacteristicUuid);
+        await rawDataTxCharacteristic.startNotifications();
+        rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
+    }
+
+    return Promise.resolve("repl connected");
 }
 
 function receiveReplData(event) {

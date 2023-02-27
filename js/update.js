@@ -62,13 +62,11 @@ export async function checkForUpdates() {
         gitRepoLink +
         "/releases/latest' target='_blank'>(" +
         latestVersion +
-        ")</a> available. Click <a href='#' " +
-        "onclick='startMonocleFirmwareUpdate();return false;'>" +
-        "here</a> to update."
+        ")</a> available."
     );
 }
 
-window.startMonocleFirmwareUpdate = () => {
+export function startFirmwareUpdate() {
 
     replSendRaw("import display");
     replSendRaw("display.text('Updating firmware...',120,180,0xffffff)");
