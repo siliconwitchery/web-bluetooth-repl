@@ -24,7 +24,7 @@ export async function replSendRaw(string) {
 
     function waitForResponse(resolve, reject) {
 
-        if (rawResponseString != "") {
+        if (rawResponseString.endsWith('>')) {
 
             console.log("Received raw repl response: " + rawResponseString)
             resolve(rawResponseString);
@@ -43,7 +43,7 @@ export function replHandleResponse(string) {
     if (rawResponseFlag) {
 
         // Raw responses are handled in another function
-        rawResponseString = string;
+        rawResponseString += string;
 
         return;
     }

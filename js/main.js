@@ -36,8 +36,8 @@ connectButton.addEventListener('click', () => {
                     element.disabled = false;
                 })
 
+                replResetConsole();
                 replConsole.focus()
-
 
                 checkForUpdates()
                     .then(value => {

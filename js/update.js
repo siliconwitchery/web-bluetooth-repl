@@ -5,7 +5,7 @@ export async function checkForUpdates() {
 
     let response = await replSendRaw("import device;print(device.VERSION)");
 
-    if (response.includes("no module named 'device'")) {
+    if (response.includes("ImportError")) {
 
         replSend("\x03\x02"); // Exit to friendly repl
 
