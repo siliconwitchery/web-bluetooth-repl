@@ -124,6 +124,10 @@ function replHandleKeyPress(key, ctrlKey, metaKey) {
                 replSend("\x04"); // Send Ctrl-D
                 break;
 
+            case 'e':
+                replSend("\x05"); // Send Ctrl-D
+                break;
+
             case 'k':
                 replConsole.value = "";
                 cursorPosition = 0;
@@ -227,10 +231,7 @@ replConsole.addEventListener('keydown', (event) => {
 // This handles paste events
 replConsole.addEventListener('beforeinput', (event) => {
 
-    // replace new lines with `\r` and a bunch of backspaces to clear tabs
-    replSend(event.data.replaceAll('\n',
-        '\r\n\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'));
-
+    replSend(event.data.replaceAll('\n', '\r'));
     event.preventDefault();
 });
 
