@@ -22,6 +22,11 @@
     color: var(--text-color);
 }
 
+html,
+body {
+    overflow: hidden;
+}
+
 body {
     display: flex;
     flex-direction: column;
@@ -114,6 +119,15 @@ a:hover {
 
     .app {
         width: 90%;
+    }
+
+    h1 {
+        padding-top: 4px;
+        font-size: 1.5rem;
+    }
+
+    button {
+        font-size: 0.5rem;
     }
 
     footer {
