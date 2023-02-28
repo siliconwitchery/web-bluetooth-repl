@@ -46,9 +46,7 @@ textarea {
 
 p {
     font-size: small;
-    padding-top: 1rem;
-    padding-left: 2.3rem;
-    padding-right: 2.3rem;
+    padding: 1rem 2.3rem;
     text-align: right;
 }
 
@@ -64,14 +62,14 @@ a:hover {
 
 .buttons {
     display: flex;
-    padding-left: 2rem;
+    align-self: flex-end;
     padding-right: 2rem;
 }
 
 button {
-    padding: 5px;
-    margin: 1rem 5px;
-    width: 100rem;
+    padding: 7px;
+    margin: 7px 5px;
+    width: 7rem;
     border: var(--text-color) solid 1px;
     border-radius: 3px;
     font-weight: 400;
@@ -93,6 +91,10 @@ button:disabled {
     background-color: var(--bg-color);
 }
 
+.button-keyboard-gap {
+    height: 3rem;
+}
+
 .keyboard {
     outline: auto;
     height: 0;
@@ -101,13 +103,18 @@ button:disabled {
 
 @media only screen and (max-width: 900px) {
 
+    p {
+        text-align: center;
+    }
+
     .buttons {
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-right: 0;
+        align-self: center;
     }
 
     button {
-        font-size: 0.5rem;
+        font-size: x-small;
+        width: 5rem;
     }
 
     .keyboard {

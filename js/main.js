@@ -3,10 +3,11 @@ import { replResetConsole, replSend } from "./repl.js";
 import { checkForUpdates, startFirmwareUpdate } from "./update.js"
 
 window.addEventListener("load", () => {
-    replConsole.placeholder =
-        "Welcome to the MicroPython Web REPL. Connect via Bluetooth using the button below.\n\n" +
-        "Currently, only Chrome desktop supports Web Bluetooth which is used here.\n\n" +
-        "You're welcome to fork, contribute, and suggest bugfixes for this code within the repository linked below.";
+    replConsole.innerHTML =
+        "Welcome to the MicroPython Web Bluetooth REPL. \n\n" +
+        "Make sure you're using either Chrome Desktop, Android Chrome, or iOS Bluefy.\n\n" +
+        "Report bugs and check out the source code here: https://github.com/siliconwitchery/web-bluetooth-repl\n\n\n" +
+        "Hit the connect button below to get started!"
 });
 
 const bluetoothIcon = document.getElementById('bluetoothIcon');
@@ -23,8 +24,6 @@ const clearButton = document.getElementById('clearButton');
 
 connectButton.addEventListener('click', () => {
 
-    infoText.innerHTML = "";
-
     connectDisconnect()
         .then(result => {
 
@@ -36,7 +35,6 @@ connectButton.addEventListener('click', () => {
 
             if (result === "repl connected") {
 
-                replConsole.placeholder = "";
                 connectButton.innerHTML = "Disconnect";
 
                 controlButtons.forEach(element => {
@@ -50,24 +48,20 @@ connectButton.addEventListener('click', () => {
                                 "onclick='update();return false;'>" +
                                 "here</a> to update.";
                         }
+                        replResetConsole();
                     })
                     .catch(error => {
                         infoText.innerHTML = error;
                     });
-
-                replResetConsole();
-                replConsole.focus()
-
-                bluetoothIcon.src = "/images/bluetooth-icon.svg"
             }
         })
 
         .catch(error => {
-
-            bluetoothIcon.src = "/images/no-bluetooth-icon.svg"
-
             console.error(error);
         })
+
+    replConsole.focus()
+    infoText.innerHTML = "";
 });
 
 ctrlAButton.addEventListener('click', () => {
@@ -107,8 +101,6 @@ export function receiveRawData(event) {
 }
 
 export function disconnectHandler() {
-
-    bluetoothIcon.src = "/images/no-bluetooth-icon.svg"
 
     connectButton.innerHTML = "Connect";
 

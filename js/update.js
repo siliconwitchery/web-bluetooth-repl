@@ -6,7 +6,7 @@ export async function checkForUpdates() {
     let response = await replSendRaw("import device;print(device.VERSION)");
 
     if (response.includes("ImportError")) {
-        replSend("\x03\x02"); // Exit to friendly repl
+        await replSend("\x03\x02"); // Exit to friendly repl
         return Promise.reject("Could not detect the firmware version. " +
             "You may have to update manually.");
     }
@@ -17,7 +17,7 @@ export async function checkForUpdates() {
     response = await replSendRaw("print(device.GIT_REPO)");
 
     if (response.includes("no attribute 'GIT_REPO'")) {
-        replSend("\x03\x02"); // Exit to friendly repl
+        await replSend("\x03\x02"); // Exit to friendly repl
         return Promise.reject("Could not detect the device. Current version is" +
             currentVersion + ". You may have to update manually.");
     }
@@ -38,7 +38,7 @@ export async function checkForUpdates() {
     let latestVersion = getTag.data.tag_name;
 
     if (currentVersion === latestVersion) {
-        replSend("\x03\x02"); // Exit to friendly repl
+        await replSend("\x03\x02"); // Exit to friendly repl
         return Promise.resolve("");
     }
 
@@ -51,7 +51,7 @@ export async function checkForUpdates() {
         );
     }
 
-    replSend("\x03\x02"); // Exit to friendly repl
+    await replSend("\x03\x02"); // Exit to friendly repl
 
     return Promise.resolve(
         "New firmware <a href='" +
@@ -69,5 +69,4 @@ export function startFirmwareUpdate() {
     replSendRaw("display.show()");
     replSendRaw("import update");
     replSendRaw("update.micropython()");
-    replSendRaw("print('UPDATE STARTED')");
 }
