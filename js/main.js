@@ -28,13 +28,13 @@ connectButton.addEventListener('click', () => {
     connectDisconnect()
         .then(result => {
 
-            if (result === "dfu connected") {
+            if (result.status === "dfu connected") {
 
                 connectButton.innerHTML = "Disconnect";
                 infoText.innerHTML = "TODO: Starting firmware update...";
             }
 
-            if (result === "repl connected") {
+            if (result.status === "repl connected") {
 
                 replConsole.placeholder = "";
                 connectButton.innerHTML = "Disconnect";

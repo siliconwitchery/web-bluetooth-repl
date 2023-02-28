@@ -4,7 +4,10 @@
 <head>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="viewport-fit=cover initial-scale=1.0, maximum-scale=1.0">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
     <link rel="stylesheet" href="style.css">
     <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
 
@@ -26,7 +29,6 @@
 
     <!-- Import javascript -->
     <script type="module" src="./js/main.js"></script>
-    <script type="text/javascript" src="./js/bluetooth.js"></script>
 
 </head>
 
@@ -42,7 +44,7 @@
         <p id="infoText"></p>
 
         <!-- REPL console -->
-        <textarea type="text" id="replConsole" class="replCtrlBtn replInput" rows=20 autocomplete="off" autocorrect="off" autocapitalize="off"
+        <textarea type="text" id="replConsole" rows=20 autocomplete="off" autocorrect="off" autocapitalize="off"
             spellcheck="false"></textarea>
 
         <!-- Buttons -->
@@ -52,19 +54,19 @@
                 Connect
             </button>
 
-            <button id="ctrlAButton" name="controlButton" class="replCtrlBtn ctrlA" title="Raw REPL mode" disabled>
+            <button id="ctrlAButton" name="controlButton" title="Raw REPL mode" disabled>
                 Ctrl-A
             </button>
 
-            <button id="ctrlBButton" name="controlButton" class="replCtrlBtn ctrlB" title="Friendly REPL mode" disabled>
+            <button id="ctrlBButton" name="controlButton" title="Friendly REPL mode" disabled>
                 Ctrl-B
             </button>
 
-            <button id="ctrlCButton" name="controlButton" class="replCtrlBtn ctrlC" title="Clear line / Exit paste mode" disabled>
+            <button id="ctrlCButton" name="controlButton" title="Clear line / Exit paste mode" disabled>
                 Ctrl-C
             </button>
 
-            <button id="ctrlDButton" name="controlButton" class="replCtrlBtn ctrlD" title="Reset / Run Pasted code" disabled>
+            <button id="ctrlDButton" name="controlButton" title="Reset / Run Pasted code" disabled>
                 Ctrl-D
             </button>
 

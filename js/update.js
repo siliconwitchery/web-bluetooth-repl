@@ -67,7 +67,10 @@ export function startFirmwareUpdate() {
     replSendRaw("import display");
     replSendRaw("display.text('Updating firmware...',120,180,0xffffff)");
     replSendRaw("display.show()");
-    replSendRaw("import update");
-    replSendRaw("update.micropython()");
-    replSendRaw("print('UPDATE STARTED')");
+    setTimeout(()=>{
+        replSendRaw("import update");
+        replSendRaw("update.micropython()");
+        replSendRaw("print('UPDATE STARTED')");
+    },10)
+    
 }

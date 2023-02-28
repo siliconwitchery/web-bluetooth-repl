@@ -40,7 +40,8 @@ export async function connectDisconnect() {
         // Stop transmitting data
         clearInterval(replTxTaskIntervalId);
 
-        return Promise.resolve("disconnected");
+        device = null;
+        return Promise.resolve({status:"disconnected",device:device});
     }
 
     device = await navigator.bluetooth.requestDevice({
@@ -64,7 +65,7 @@ export async function connectDisconnect() {
 
     if (nordicDfuService) {
 
-        return Promise.resolve("dfu connected");
+        return Promise.resolve({status:"dfu connected",device:device});
     }
 
     if (replService) {
@@ -82,7 +83,7 @@ export async function connectDisconnect() {
         rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
     }
 
-    return Promise.resolve("repl connected");
+    return Promise.resolve({status:"repl connected",device:device});
 }
 
 function receiveReplData(event) {

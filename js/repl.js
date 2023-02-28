@@ -99,7 +99,7 @@ export function replHandleResponse(string) {
     replConsole.scrollTop = replConsole.scrollHeight;
 }
 
-function replHandleKeyPress(key, ctrlKey, metaKey) {
+export function replHandleKeyPress(key, ctrlKey, metaKey) {
 
     if (ctrlKey) {
         switch (key) {
