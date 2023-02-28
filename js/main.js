@@ -1,6 +1,6 @@
 import { connectDisconnect } from "./bluetooth.js";
 import { replResetConsole, replSend } from "./repl.js";
-import { checkForUpdates, startFirmwareUpdate } from "./update.js"
+import { checkForUpdates, startFirmwareUpdate, startFPGAUpdate } from "./update.js"
 
 window.addEventListener("load", () => {
     replConsole.innerHTML =
@@ -14,6 +14,7 @@ const bluetoothIcon = document.getElementById('bluetoothIcon');
 const infoText = document.getElementById('infoText');
 const replConsole = document.getElementById('replConsole');
 const connectButton = document.getElementById('connectButton');
+const fpgaUpdateButton = document.getElementById('fpgaUpdateButton');
 const controlButtons = document.getElementsByName('controlButton');
 const ctrlAButton = document.getElementById('ctrlAButton');
 const ctrlBButton = document.getElementById('ctrlBButton');
@@ -92,6 +93,13 @@ ctrlEButton.addEventListener('click', () => {
 clearButton.addEventListener('click', () => {
     replResetConsole();
     replSend('\x03');
+    replConsole.focus();
+});
+
+fpgaUpdateButton.addEventListener('click', () => {
+    startFPGAUpdate();
+    alert(navigator.userAgent)
+
     replConsole.focus();
 });
 

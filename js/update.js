@@ -70,3 +70,7 @@ export function startFirmwareUpdate() {
     replSendRaw("import update");
     replSendRaw("update.micropython()");
 }
+
+export function startFPGAUpdate() {
+    replSendRaw('import update;update.fpga()');
+}
