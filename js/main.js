@@ -18,6 +18,7 @@ const ctrlAButton = document.getElementById('ctrlAButton');
 const ctrlBButton = document.getElementById('ctrlBButton');
 const ctrlCButton = document.getElementById('ctrlCButton');
 const ctrlDButton = document.getElementById('ctrlDButton');
+const ctrlEButton = document.getElementById('ctrlEButton');
 const clearButton = document.getElementById('clearButton');
 
 connectButton.addEventListener('click', () => {
@@ -86,6 +87,11 @@ ctrlCButton.addEventListener('click', () => {
 
 ctrlDButton.addEventListener('click', () => {
     replSend('\x04');
+    replConsole.focus()
+});
+
+ctrlEButton.addEventListener('click', () => {
+    replSend('\x05');
     replConsole.focus()
 });
 
