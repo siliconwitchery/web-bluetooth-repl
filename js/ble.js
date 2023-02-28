@@ -333,16 +333,16 @@
             await txCharacteristic.startNotifications();
           }
           bleObject.bindUIeventListners(service.uiEvents,service.dataTxQueue)
-
+          let inputNode  = null
+          if(service.uiEvents?.commonClass && service.uiEvents?.inputClass){
+             inputNode = document.querySelector('.'+service.uiEvents.commonClass+'.'+service.uiEvents.inputClass)
+             if(inputNode) inputNode.value = "";
+          }
           if (service.txCharacteristicListner) {
             txCharacteristic.addEventListener("characteristicvaluechanged",(event)=>{
               service.txCharacteristicListner(event)
-              if(service.uiEvents?.commonClass && service.uiEvents?.inputClass){
-                let inputNode = document.querySelector('.'+service.uiEvents.commonClass+'.'+service.uiEvents.inputClass)
-                if(inputNode){
-                  inputNode.value = ""
-                  bleObject.updateInput(event,inputNode)
-                }
+              if(inputNode){
+                bleObject.updateInput(event,inputNode)
               }
             });
           }
