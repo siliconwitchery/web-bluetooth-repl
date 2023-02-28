@@ -1,10 +1,12 @@
-import { disconnectHandler, receiveReplData, receiveRawData } from "./main.js"
+import { disconnectHandler, receiveRawData } from "./main.js"
+import { replHandleResponse } from "./repl.js";
+import { nordicDfuServiceUuid } from "./nordicdfu.js"
 
-var device = null;
-var replRxCharacteristic = null;
-var replTxCharacteristic = null;
-var rawDataRxCharacteristic = null;
-var rawDataTxCharacteristic = null;
+let device = null;
+let replRxCharacteristic = null;
+let replTxCharacteristic = null;
+let rawDataRxCharacteristic = null;
+let rawDataTxCharacteristic = null;
 
 const replDataServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const replRxCharacteristicUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
@@ -14,93 +16,85 @@ const rawDataServiceUuid = "e5700001-7bac-429a-b4ce-57ff900f479d";
 const rawDataRxCharacteristicUuid = "e5700002-7bac-429a-b4ce-57ff900f479d";
 const rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
 
-const replDataTxQueue = [];
-const rawDataTxQueue = [];
-let inetrvalId = null
-var replDataTxInProgress = false;
-var rawDataTxInProgress = false;
+export const replDataTxQueue = [];
+export const rawDataTxQueue = [];
+
+let replTxTaskIntervalId = null
+let replDataTxInProgress = false;
+let rawDataTxInProgress = false;
 
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
 const max_mtu = 100;
 
-function isWebBluetoothAvailable() {
-    return new Promise((resolve, reject) => {
-        navigator.bluetooth
-            ? resolve()
-            : reject("Bluetooth not available on this browser. Are you using Chrome?");
-    });
-}
-
 export async function connectDisconnect() {
-    try {
 
-        await isWebBluetoothAvailable();
+    if (!navigator.bluetooth) {
+        return Promise.reject("This browser doesn't support WebBluetooth. " +
+            "Make sure you're on Chrome Desktop/Android or BlueFy iOS.")
+    }
 
-        // If already connected, disconnect
-        if (device && device.gatt.connected) {
+    if (device && device.gatt.connected) {
 
-            await device.gatt.disconnect();
+        await device.gatt.disconnect();
 
-            // Stop transmitting data
-            clearInterval(inetrvalId);
+        // Stop transmitting data
+        clearInterval(replTxTaskIntervalId);
 
-            return Promise.resolve("disconnected");
-        }
+        return Promise.resolve("disconnected");
+    }
 
-        // Otherwise bring up the device window
-        device = await navigator.bluetooth.requestDevice({
+    device = await navigator.bluetooth.requestDevice({
 
-            filters: [{
-                services: [replDataServiceUuid]
-            }],
-            optionalServices: [rawDataServiceUuid]
-        });
+        filters: [
+            { services: [replDataServiceUuid] },
+            { services: [nordicDfuServiceUuid] },
+        ],
+        optionalServices: [rawDataServiceUuid]
+    });
 
-        // Handler to watch for device being disconnected due to loss of connection
-        device.addEventListener('gattserverdisconnected', disconnectHandler);
+    const server = await device.gatt.connect()
+    device.addEventListener('gattserverdisconnected', disconnectHandler);
 
-        const server = await device.gatt.connect();
+    const nordicDfuService = await server.getPrimaryService(nordicDfuServiceUuid)
+        .catch(() => { });
+    const replService = await server.getPrimaryService(replDataServiceUuid)
+        .catch(() => { });
+    const rawDataService = await server.getPrimaryService(rawDataServiceUuid)
+        .catch(() => { });
 
-        // Set up the REPL characteristics
-        const replService = await server.getPrimaryService(replDataServiceUuid);
+    if (nordicDfuService) {
 
+        return Promise.resolve("dfu connected");
+    }
+
+    if (replService) {
         replRxCharacteristic = await replService.getCharacteristic(replRxCharacteristicUuid);
         replTxCharacteristic = await replService.getCharacteristic(replTxCharacteristicUuid);
         await replTxCharacteristic.startNotifications();
         replTxCharacteristic.addEventListener('characteristicvaluechanged', receiveReplData);
-
-        // Try to set up the raw data characteristics if the service is available
-        const rawDataService = await server.getPrimaryService(rawDataServiceUuid)
-            .catch(error => {
-                console.log("Raw data service is not available on this device");
-            });
-
-        if (rawDataService) {
-            rawDataRxCharacteristic = await rawDataService.getCharacteristic(rawDataRxCharacteristicUuid);
-            rawDataTxCharacteristic = await rawDataService.getCharacteristic(rawDataTxCharacteristicUuid);
-            await rawDataTxCharacteristic.startNotifications();
-            rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
-        }
-
-        // Start sending data
-        inetrvalId = setInterval(transmitReplData);
-
-        return Promise.resolve("connected");
-
-    } catch (error) {
-
-        return Promise.reject(error);
+        replTxTaskIntervalId = setInterval(transmitReplData);
     }
+
+    if (rawDataService) {
+        rawDataRxCharacteristic = await rawDataService.getCharacteristic(rawDataRxCharacteristicUuid);
+        rawDataTxCharacteristic = await rawDataService.getCharacteristic(rawDataTxCharacteristicUuid);
+        await rawDataTxCharacteristic.startNotifications();
+        rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
+    }
+
+    return Promise.resolve("repl connected");
 }
 
-export function queueReplData(string) {
+function receiveReplData(event) {
 
-    // Encode the UTF-8 string into an array and populate the buffer
-    const encoder = new TextEncoder('utf-8');
-    replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
+    // Decode the byte array into a UTF-8 string
+    const decoder = new TextDecoder('utf-8');
+
+    replHandleResponse(decoder.decode(event.target.value));
 }
 
 async function transmitReplData() {
+
     if (replDataTxInProgress === true) {
         return;
     }
@@ -135,6 +129,7 @@ async function transmitReplData() {
 
 }
 
+// TODO
 export async function transmitRawData(bytes) {
     await rawDataRxCharacteristic.writeValueWithoutResponse(new Uint8Array(bytes))
         .then(() => {

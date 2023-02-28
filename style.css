@@ -109,9 +109,16 @@ a {
 a:hover {
     color: var(--link-hover-color);
 }
+
 @media only screen and (max-width: 900px) {
-    
+
     .app {
         width: 90%;
     }
-  }
+
+    footer {
+        line-height: 1.4rem;
+        flex-direction: column;
+        align-items: center;
+    }
+}
