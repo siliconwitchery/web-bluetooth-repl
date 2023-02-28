@@ -22,6 +22,11 @@
     color: var(--text-color);
 }
 
+html,
+body {
+    overflow: hidden;
+}
+
 body {
     display: flex;
     flex-direction: column;
