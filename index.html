@@ -34,66 +34,52 @@
 
 <body>
 
-    <div class="app">
-        <div style="display: flex; justify-content: space-between;">
-            <h1>MicroPython Web REPL</h1>
-            <img id="bluetoothIcon" src="/images/no-bluetooth-icon.svg" height="30" style="padding-top: 5px;">
-        </div>
+    <textarea type="text" id="replConsole" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        inputmode="none"></textarea>
 
-        <!-- Latest version and docs link -->
-        <p id="infoText"></p>
+    <p id="infoText"></p>
 
-        <!-- REPL console -->
-        <textarea type="text" id="replConsole" rows=20 autocomplete="off" autocorrect="off" autocapitalize="off"
-            spellcheck="false"></textarea>
+    <!-- Buttons -->
+    <div class=" buttons">
 
-        <!-- Buttons -->
-        <div class=" buttons">
+        <button id="connectButton" title="Open Bluetooth connection pane">
+            Connect
+        </button>
 
-            <button id="connectButton" title="Open Bluetooth connection pane">
-                Connect
-            </button>
+        <button id="ctrlAButton" name="controlButton" title="Raw REPL mode" disabled>
+            Ctrl-A
+        </button>
 
-            <button id="ctrlAButton" name="controlButton" title="Raw REPL mode" disabled>
-                Ctrl-A
-            </button>
+        <button id="ctrlBButton" name="controlButton" title="Friendly REPL mode" disabled>
+            Ctrl-B
+        </button>
 
-            <button id="ctrlBButton" name="controlButton" title="Friendly REPL mode" disabled>
-                Ctrl-B
-            </button>
+        <button id="ctrlCButton" name="controlButton" title="Clear line / Exit paste mode" disabled>
+            Ctrl-C
+        </button>
 
-            <button id="ctrlCButton" name="controlButton" title="Clear line / Exit paste mode" disabled>
-                Ctrl-C
-            </button>
+        <button id="ctrlDButton" name="controlButton" title="Reset / Run Pasted code" disabled>
+            Ctrl-D
+        </button>
 
-            <button id="ctrlDButton" name="controlButton" title="Reset / Run Pasted code" disabled>
-                Ctrl-D
-            </button>
+        <button id="ctrlEButton" name="controlButton" title="Paste mode" disabled>
+            Ctrl-E
+        </button>
 
-            <button id="ctrlEButton" name="controlButton" title="Paste mode" disabled>
-                Ctrl-E
-            </button>
-
-            <button id="clearButton" name="controlButton" title="Clear entire terminal" disabled>
-                Ctrl-K
-            </button>
-
-        </div>
-
-        <footer>
-
-            <p>For help, bug reporting, and source code, visit the
-                <a href="https://github.com/siliconwitchery/web-bluetooth-repl" target="_blank">repository</a>
-            </p>
-
-            <p>Copyright © 2023 <a href="https://www.siliconwitchery.com" target="_blank">Silicon Witchery</a></p>
-
-        </footer>
+        <button id="clearButton" name="controlButton" title="Clear entire terminal" disabled>
+            Ctrl-K
+        </button>
 
     </div>
 
+    <div class="keyboard">
+        keyboard area
+    </div>
+
+    <!-- <p>For help, bug reporting, and source code, visit the -->
+    <!-- <a href="https://github.com/siliconwitchery/web-bluetooth-repl" target="_blank">repository</a> -->
+    <!-- </p> -->
+    <!-- <p>Copyright © 2023 <a href="https://www.siliconwitchery.com" target="_blank">Silicon Witchery</a></p> -->
 </body>
-
-
 
 </html>
