@@ -43,14 +43,22 @@ export async function connectDisconnect() {
         return Promise.resolve("disconnected");
     }
 
-    device = await navigator.bluetooth.requestDevice({
+    // Bluefy on ios currently doesn't allow multiple filters
+    if (/iPhone|iPad/.test(navigator.userAgent)) {
+        device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true
+        });
+    }
+    else {
+        device = await navigator.bluetooth.requestDevice({
+            filters: [
+                { services: [replDataServiceUuid] },
+                { services: [nordicDfuServiceUuid] },
+            ],
+            optionalServices: [rawDataServiceUuid]
+        });
+    }
 
-        filters: [
-            { services: [replDataServiceUuid] },
-            { services: [nordicDfuServiceUuid] },
-        ],
-        optionalServices: [rawDataServiceUuid]
-    });
 
     const server = await device.gatt.connect()
     device.addEventListener('gattserverdisconnected', disconnectHandler);

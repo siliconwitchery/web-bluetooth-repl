@@ -98,8 +98,6 @@ clearButton.addEventListener('click', () => {
 
 fpgaUpdateButton.addEventListener('click', () => {
     startFPGAUpdate();
-    alert(navigator.userAgent)
-
     replConsole.focus();
 });
 
