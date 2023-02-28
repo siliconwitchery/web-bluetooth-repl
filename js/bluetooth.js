@@ -46,8 +46,8 @@ export async function connectDisconnect() {
     device = await navigator.bluetooth.requestDevice({
 
         filters: [
-            { services: [replDataServiceUuid] },
             { services: [nordicDfuServiceUuid] },
+            { services: [replDataServiceUuid] },
         ],
         optionalServices: [rawDataServiceUuid]
     });
