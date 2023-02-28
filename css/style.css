@@ -96,7 +96,6 @@ button:disabled {
 }
 
 .keyboard {
-    outline: auto;
     height: 0;
     width: 100%;
 }

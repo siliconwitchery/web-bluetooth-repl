@@ -1,0 +1,35 @@
+.simple-keyboard span {
+    font-size: large;
+    font-weight: 400;
+}
+
+.simple-keyboard.hg-theme-default {
+    background-color: var(--bg-color);
+}
+
+.simple-keyboard.hg-theme-default .hg-button.hg-activeButton {
+    background: var(--button-click-color);
+}
+
+.simple-keyboard.hg-theme-default .hg-row:nth-child(2) {
+    margin-left: 18px;
+    margin-right: 18px;
+}
+
+.simple-keyboard.hg-theme-default .hg-row .hg-button.hg-button-shift {
+    margin-right: 17px;
+}
+
+.simple-keyboard.hg-theme-default .hg-row .hg-button.hg-button-bksp {
+    margin-left: 17px;
+}
+
+.simple-keyboard.hg-theme-default .hg-button-space {
+    max-width: 50%;
+    min-width: 50%;
+}
+
+.simple-keyboard.hg-theme-default .hg-button {
+    background: var(--button-hover-color);
+    border-bottom: 1px solid #000000;
+}

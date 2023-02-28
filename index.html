@@ -8,7 +8,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="viewport-fit=cover initial-scale=1.0, maximum-scale=1.0">
     <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/css/index.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/keyboard.css">
     <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
 
     <!-- SEO title & description -->
@@ -29,6 +31,8 @@
 
     <!-- Import javascript -->
     <script type="module" src="./js/main.js"></script>
+    <script type="module" src="./js/keyboard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/index.js"></script>
 
 </head>
 
@@ -73,7 +77,7 @@
     <div class="button-keyboard-gap"></div>
 
     <div class="keyboard">
-        keyboard area
+        <div class="simple-keyboard"></div>
     </div>
 
 </body>
