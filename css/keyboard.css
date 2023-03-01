@@ -16,11 +16,11 @@
     margin-right: 18px;
 }
 
-.simple-keyboard.hg-theme-default .hg-row .hg-button.hg-button-shift {
+.simple-keyboard.hg-theme-default .hg-row:nth-child(3) .hg-button:nth-child(1) {
     margin-right: 17px;
 }
 
-.simple-keyboard.hg-theme-default .hg-row .hg-button.hg-button-bksp {
+.simple-keyboard.hg-theme-default .hg-row:nth-child(3) .hg-button:nth-last-child(1) {
     margin-left: 17px;
 }
 

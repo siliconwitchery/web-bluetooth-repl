@@ -64,12 +64,13 @@ a:hover {
     display: flex;
     align-self: flex-end;
     padding-right: 2rem;
+    padding-bottom: 3rem;
 }
 
 button {
     padding: 7px;
     margin: 7px 5px;
-    width: 7rem;
+    width: 6rem;
     border: var(--text-color) solid 1px;
     border-radius: 3px;
     font-weight: 400;
@@ -91,10 +92,6 @@ button:disabled {
     background-color: var(--bg-color);
 }
 
-.button-keyboard-gap {
-    height: 3rem;
-}
-
 .keyboard {
     height: 0;
     width: 100%;
@@ -107,8 +104,9 @@ button:disabled {
     }
 
     .buttons {
-        padding-right: 0;
-        align-self: center;
+        visibility: hidden;
+        height: 0;
+        padding: 0;
     }
 
     button {

@@ -1,14 +1,19 @@
-import { replDataTxQueue } from "./bluetooth.js";
+import { isConnected, replDataTxQueue } from "./bluetooth.js";
+import { ensureConnected } from "./main.js";
 
 let cursorPosition = 0;
 let rawResponseFlag = false;
 let rawResponseString = "";
 
-export function replSend(string) {
+export async function replSend(string) {
 
-    // Encode the UTF-8 string into an array and populate the buffer
-    const encoder = new TextEncoder('utf-8');
-    replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
+    ensureConnected();
+
+    if (isConnected()) {
+        // Encode the UTF-8 string into an array and populate the buffer
+        const encoder = new TextEncoder('utf-8');
+        replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
+    }
 }
 
 export async function replSendRaw(string) {

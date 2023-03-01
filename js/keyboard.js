@@ -1,4 +1,5 @@
 import { replHandleKeyPress } from "./repl.js";
+import { startFPGAUpdate } from "./update.js";
 
 let Keyboard = window.SimpleKeyboard.default;
 
@@ -69,9 +70,6 @@ function onKeyPress(button) {
 
     const currentLayout = keyboard.options.layoutName;
 
-    console.log("Button pressed", button);
-
-
     switch (button) {
         case "{shift}":
             if (currentLayout === "default")
@@ -96,12 +94,12 @@ function onKeyPress(button) {
             keyboard.setOptions({ layoutName: "ctrl" });
             break;
 
-        case "{bksp}":
-            replHandleKeyPress("Backspace", false, false);
-            break;
-
         case "{tab}":
             replHandleKeyPress("Tab", false, false);
+            break;
+
+        case "{bksp}":
+            replHandleKeyPress("Backspace", false, false);
             break;
 
         case "{space}":
@@ -110,6 +108,50 @@ function onKeyPress(button) {
 
         case "{return}":
             replHandleKeyPress("Enter", false, false);
+            break;
+
+        case "{ctrl-a}":
+            replHandleKeyPress("a", true, false);
+            break;
+
+        case "{ctrl-b}":
+            replHandleKeyPress("b", true, false);
+            break;
+
+        case "{ctrl-c}":
+            replHandleKeyPress("c", true, false);
+            break;
+
+        case "{ctrl-d}":
+            replHandleKeyPress("d", true, false);
+            break;
+
+        case "{ctrl-e}":
+            replHandleKeyPress("e", true, false);
+            break;
+
+        case "{upload}":
+            startFPGAUpdate();
+            break;
+
+        case "{clear}":
+            replHandleKeyPress("k", false, true);
+            break;
+
+        case "{up}":
+            replHandleKeyPress("ArrowUp", false, false);
+            break;
+
+        case "{down}":
+            replHandleKeyPress("ArrowDown", false, false);
+            break;
+
+        case "{left}":
+            replHandleKeyPress("ArrowLeft", false, false);
+            break;
+
+        case "{right}":
+            replHandleKeyPress("ArrowRight", false, false);
             break;
 
         default:

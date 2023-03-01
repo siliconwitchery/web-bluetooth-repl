@@ -62,15 +62,15 @@ export async function checkForUpdates() {
     );
 }
 
-export function startFirmwareUpdate() {
+export async function startFirmwareUpdate() {
 
-    replSendRaw("import display");
-    replSendRaw("display.text('Updating firmware...',120,180,0xffffff)");
-    replSendRaw("display.show()");
-    replSendRaw("import update");
-    replSendRaw("update.micropython()");
+    await replSendRaw("import display");
+    await replSendRaw("display.text('Updating firmware...',120,180,0xffffff)");
+    await replSendRaw("display.show()");
+    await replSendRaw("import update");
+    await replSendRaw("update.micropython()");
 }
 
-export function startFPGAUpdate() {
-    replSendRaw('import update;update.fpga()');
+export async function startFPGAUpdate() {
+    await replSendRaw('import update;update.fpga()');
 }

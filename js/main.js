@@ -1,4 +1,4 @@
-import { connectDisconnect } from "./bluetooth.js";
+import { connect, isConnected } from "./bluetooth.js";
 import { replResetConsole, replSend } from "./repl.js";
 import { checkForUpdates, startFirmwareUpdate, startFPGAUpdate } from "./update.js"
 
@@ -7,15 +7,12 @@ window.addEventListener("load", () => {
         "Welcome to the MicroPython Web Bluetooth REPL. \n\n" +
         "Make sure you're using either Chrome Desktop, Android Chrome, or iOS Bluefy.\n\n" +
         "Report bugs and check out the source code here: https://github.com/siliconwitchery/web-bluetooth-repl\n\n\n" +
-        "Hit the connect button below to get started!"
+        "Hit any key to connect!"
 });
 
-const bluetoothIcon = document.getElementById('bluetoothIcon');
 const infoText = document.getElementById('infoText');
 const replConsole = document.getElementById('replConsole');
-const connectButton = document.getElementById('connectButton');
 const fpgaUpdateButton = document.getElementById('fpgaUpdateButton');
-const controlButtons = document.getElementsByName('controlButton');
 const ctrlAButton = document.getElementById('ctrlAButton');
 const ctrlBButton = document.getElementById('ctrlBButton');
 const ctrlCButton = document.getElementById('ctrlCButton');
@@ -23,96 +20,81 @@ const ctrlDButton = document.getElementById('ctrlDButton');
 const ctrlEButton = document.getElementById('ctrlEButton');
 const clearButton = document.getElementById('clearButton');
 
-connectButton.addEventListener('click', () => {
+export async function ensureConnected() {
 
-    connectDisconnect()
-        .then(result => {
+    if (isConnected() === true) {
+        return;
+    }
 
-            if (result === "dfu connected") {
+    try {
+        let connectionResult = await connect();
 
-                connectButton.innerHTML = "Disconnect";
-                infoText.innerHTML = "TODO: Starting firmware update...";
-            }
+        if (connectionResult === "repl connected") {
+            showStatus("Connected");
+        }
 
-            if (result === "repl connected") {
+        if (connectionResult === "dfu connected") {
+            showStatus("TODO: Starting firmware update...");
+            return;
+        }
 
-                connectButton.innerHTML = "Disconnect";
+        let updateInfo = await checkForUpdates();
 
-                controlButtons.forEach(element => {
-                    element.disabled = false;
-                })
+        if (updateInfo != "") {
+            showStatus(updateInfo + " Click <a href='#' " +
+                "onclick='update();return false;'>" +
+                "here</a> to update.");
+        }
 
-                checkForUpdates()
-                    .then(value => {
-                        if (value != "") {
-                            infoText.innerHTML = value + " Click <a href='#' " +
-                                "onclick='update();return false;'>" +
-                                "here</a> to update.";
-                        }
-                        replResetConsole();
-                    })
-                    .catch(error => {
-                        infoText.innerHTML = error;
-                    });
-            }
-        })
+        replResetConsole();
+    }
 
-        .catch(error => {
-            console.error(error);
-        })
+    catch (error) {
+        console.error(error);
+        showStatus(error);
+    }
+}
 
-    replConsole.focus()
-    infoText.innerHTML = "";
-});
+export function showStatus(string) {
+    infoText.innerHTML = string;
+}
+
+// Keep the text area always focused
+setInterval(function () {
+    replConsole.focus();
+}, 1000);
 
 ctrlAButton.addEventListener('click', () => {
     replSend('\x01');
-    replConsole.focus()
 });
 
 ctrlBButton.addEventListener('click', () => {
     replSend('\x02');
-    replConsole.focus()
 });
 
 ctrlCButton.addEventListener('click', () => {
     replSend('\x03');
-    replConsole.focus()
 });
 
 ctrlDButton.addEventListener('click', () => {
     replSend('\x04');
-    replConsole.focus()
 });
 
 ctrlEButton.addEventListener('click', () => {
     replSend('\x05');
-    replConsole.focus()
 });
 
 clearButton.addEventListener('click', () => {
     replResetConsole();
     replSend('\x03');
-    replConsole.focus();
 });
 
 fpgaUpdateButton.addEventListener('click', () => {
     startFPGAUpdate();
-    replConsole.focus();
 });
 
 export function receiveRawData(event) {
-
     console.log(event.target.value);
-}
-
-export function disconnectHandler() {
-
-    connectButton.innerHTML = "Connect";
-
-    controlButtons.forEach(element => {
-        element.disabled = true;
-    })
 }
 
 window.update = () => {
