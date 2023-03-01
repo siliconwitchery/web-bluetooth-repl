@@ -1,6 +1,8 @@
 import { replSend, replRawMode } from "./repl.js";
 import { request } from "https://cdn.skypack.dev/@octokit/request";
 
+export let gitReleaseLink = '';
+
 export async function checkForUpdates() {
 
     await replRawMode(true);
@@ -14,7 +16,7 @@ export async function checkForUpdates() {
         return Promise.reject("Could not detect the firmware version. " +
             "You may have to update manually.");
     }
-    let currentVersion = response.substring(response.indexOf("v"),
+    let currentVersion = response.substring(response.indexOf("vv"),
         response.lastIndexOf("\r\n"));
 
     response = await replSend("print(device.GIT_REPO);del(device)");
@@ -33,6 +35,8 @@ export async function checkForUpdates() {
         repo: repo
     });
     let latestVersion = getTag.data.tag_name;
+    gitReleaseLink = gitRepoLink + '/releases/download/' + latestVersion +
+        '/monocle-micropython-' + latestVersion + '.zip';
 
     if (currentVersion === latestVersion) {
         await replRawMode(false);

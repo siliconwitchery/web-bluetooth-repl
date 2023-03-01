@@ -1,6 +1,7 @@
 import { connect, isConnected } from "./bluetooth.js";
 import { replHandleKeyPress, replResetConsole, replFocusCursor } from "./repl.js";
 import { checkForUpdates, startFirmwareUpdate, startFPGAUpdate } from "./update.js"
+import { startNordicDFU } from "./nordicdfu.js"
 
 const replPlaceHolderText =
     "Welcome to the MicroPython Web Bluetooth REPL.\n\n" +
@@ -33,7 +34,8 @@ export async function ensureConnected() {
 
         // TODO
         if (connectionResult === "dfu connected") {
-            infoText.innerHTML = "TODO: Starting firmware update...";
+            infoText.innerHTML = "Starting firmware update...";
+            await startNordicDFU();
             return;
         }
 
