@@ -5,7 +5,7 @@ export async function checkForUpdates() {
 
     await replRawMode(true);
 
-    let response = await replSend("import device;print(device.VERSION)\x04");
+    let response = await replSend("import device;print(device.VERSION)");
 
     if (response.includes("ImportError")) {
         await replRawMode(false);
@@ -16,7 +16,7 @@ export async function checkForUpdates() {
     let currentVersion = response.substring(response.indexOf("v"),
         response.lastIndexOf("\r\n"));
 
-    response = await replSend("print(device.GIT_REPO);del(device)\x04");
+    response = await replSend("print(device.GIT_REPO);del(device)");
 
     if (response.includes("no attribute 'GIT_REPO'")) {
         await replRawMode(false);
@@ -47,7 +47,7 @@ export async function checkForUpdates() {
             "import display;" +
             "display.text('New firmware available',100,180,0xffffff);" +
             "display.show();" +
-            "del(display)\x04"
+            "del(display)"
         );
     }
 
@@ -68,13 +68,13 @@ export async function startFirmwareUpdate() {
         "display.text('Updating firmware...',120,180,0xffffff);" +
         "display.show();" +
         "import update;" +
-        "update.micropython()\x04");
+        "update.micropython()");
     await replRawMode(false);
 }
 
 // TODO
 export async function startFPGAUpdate() {
     await replRawMode(true);
-    await replSend('import update;update.fpga()\x04');
+    await replSend('import update;update.fpga()');
     await replRawMode(false);
 }

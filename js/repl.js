@@ -4,17 +4,20 @@ import { ensureConnected } from './main.js';
 let cursorPosition = 0;
 let replRawModeEnabled = false;
 let rawReplResponseString = '';
+let rawReplResponseCallbacks = {};
 
 export async function replRawMode(enable) {
 
     if (enable === true) {
         replRawModeEnabled = true;
+        console.log("Entering raw REPL mode");
         await replSend('\x03\x01');
         return;
     }
 
-    replSend('\x03\x02');
+    console.log("Leaving raw REPL mode");
     replRawModeEnabled = false;
+    replSend('\x02');
 }
 
 export async function replSend(string) {
@@ -26,38 +29,51 @@ export async function replSend(string) {
         return;
     }
 
+    // If in raw repl mode, and string contains printable characters, append Ctrl-D
+    if (replRawModeEnabled && /[\x20-\x7F]/.test(string)) {
+        string += '\x04'
+    }
+
     // Encode the UTF-8 string into an array and populate the buffer
     const encoder = new TextEncoder('utf-8');
     replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
 
     console.log('Raw REPL ⬆️: ' + string.replaceAll('\n', '\\n'))
 
-    return new Promise(waitForResponse);
-
-    function waitForResponse(resolve, reject) {
-
-        if (rawReplResponseString.endsWith('>')) {
-            console.log('Raw REPL ⬇️: ' + rawReplResponseString.replaceAll('\r\n', '\\r\\n'))
-            resolve(rawReplResponseString);
+    // Return a promise which calls a function that'll eventually run when the
+    // response handler calls the function associated with rawReplResponseCallbacks
+    return new Promise(resolve => {
+        const callbackId = Date.now();
+        rawReplResponseCallbacks[callbackId] = responseString => {
+            console.log('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
             rawReplResponseString = '';
-        }
-        else {
-            setTimeout(waitForResponse.bind(this, resolve, reject));
-        }
-    }
+            delete rawReplResponseCallbacks[callbackId];
+            resolve(responseString);
+        };
+        setTimeout(() => {
+            resolve("");
+        }, 1000);
+    });
 }
 
 export function replHandleResponse(string) {
 
-    console.log("Printed pre " + string + replRawModeEnabled);
-    // Raw responses are handled in replSendRaw with a timer
-    rawReplResponseString += string;
-
     if (replRawModeEnabled === true) {
+
+        // Combine the string until it's ready to handle
+        rawReplResponseString += string;
+
+        // Once the end of response '>' is received, run the callbacks
+        if (string.endsWith('>') || string.endsWith('>>> ')) {
+            for (const callback of Object.values(rawReplResponseCallbacks)) {
+                console.log("callback()" + rawReplResponseString);
+                callback(rawReplResponseString);
+            }
+        }
+
+        // Don't show these strings on the console
         return;
     }
-
-    console.log("Printed " + string);
 
     // For every character in the string, i is incremented internally
     for (let i = 0; i < string.length;) {
