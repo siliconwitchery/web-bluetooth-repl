@@ -1,4 +1,4 @@
-import { disconnectHandler, receiveRawData } from "./main.js"
+import { receiveRawData, showStatus } from "./main.js"
 import { replHandleResponse } from "./repl.js";
 import { nordicDfuServiceUuid } from "./nordicdfu.js"
 
@@ -26,34 +26,40 @@ let rawDataTxInProgress = false;
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
 const max_mtu = 100;
 
-export async function connectDisconnect() {
+export function isConnected() {
+
+    if (device && device.gatt.connected) {
+        return true;
+    }
+
+    return false;
+}
+
+export async function connect() {
 
     if (!navigator.bluetooth) {
         return Promise.reject("This browser doesn't support WebBluetooth. " +
             "Make sure you're on Chrome Desktop/Android or BlueFy iOS.")
     }
 
-    if (device && device.gatt.connected) {
-
-        await device.gatt.disconnect();
-
-        // Stop transmitting data
-        clearInterval(replTxTaskIntervalId);
-
-        return Promise.resolve("disconnected");
+    // Bluefy on ios currently doesn't allow multiple filters
+    if (/iPhone|iPad/.test(navigator.userAgent)) {
+        device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true
+        });
+    }
+    else {
+        device = await navigator.bluetooth.requestDevice({
+            filters: [
+                { services: [replDataServiceUuid] },
+                { services: [nordicDfuServiceUuid] },
+            ],
+            optionalServices: [rawDataServiceUuid]
+        });
     }
 
-    device = await navigator.bluetooth.requestDevice({
-
-        filters: [
-            { services: [replDataServiceUuid] },
-            { services: [nordicDfuServiceUuid] },
-        ],
-        optionalServices: [rawDataServiceUuid]
-    });
-
     const server = await device.gatt.connect()
-    device.addEventListener('gattserverdisconnected', disconnectHandler);
+    device.addEventListener('gattserverdisconnected', disconnect);
 
     const nordicDfuService = await server.getPrimaryService(nordicDfuServiceUuid)
         .catch(() => { });
@@ -83,6 +89,19 @@ export async function connectDisconnect() {
     }
 
     return Promise.resolve("repl connected");
+}
+
+export async function disconnect() {
+
+    if (device && device.gatt.connected) {
+        await device.gatt.disconnect();
+    }
+
+    // Stop transmitting data
+    clearInterval(replTxTaskIntervalId);
+
+    showStatus("Disconnected");
+    return Promise.resolve("disconnected");
 }
 
 function receiveReplData(event) {

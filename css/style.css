@@ -2,8 +2,7 @@
 
 :root {
     --text-color: rgb(247, 247, 240);
-    --bg-color: rgb(40, 41, 53);
-    --textbox-color: rgb(30, 31, 39);
+    --bg-color: rgb(30, 31, 39);
     --button-hover-color: rgb(100, 100, 110);
     --button-click-color: rgb(80, 80, 90);
     --button-disabled-color: rgb(90, 90, 100);
@@ -25,56 +24,53 @@
 html,
 body {
     overflow: hidden;
+    height: 100%;
 }
 
 body {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding-top: 3rem;
+    justify-content: space-evenly;
     background-color: var(--bg-color);
-}
-
-.app {
-    width: 70%;
-    display: flex;
-    flex-direction: column;
 }
 
 textarea {
     font-family: 'Roboto Mono', monospace;
-    padding: 1rem;
-    margin-top: 1rem;
-    resize: vertical;
-    background-color: var(--textbox-color);
+    width: 100%;
+    height: 100%;
+    margin-top: 3rem;
+    padding: 0.6rem;
+    resize: none;
+    background-color: var(--bg-color);
 }
 
-h1 {
-    font-weight: 100;
-    margin-bottom: 1rem;
-    text-transform: capitalize;
-    letter-spacing: 0.08rem;
-}
-
-b {
-    font-weight: 700;
+p {
+    font-size: small;
+    padding: 1rem 2.3rem;
+    text-align: right;
 }
 
 a {
-    margin-top: 2rem;
-    font-weight: 700;
-    letter-spacing: 0.08rem;
+    font-weight: 400;
+    letter-spacing: normal;
+    color: var(--link-color);
+}
+
+a:hover {
+    color: var(--link-hover-color);
 }
 
 .buttons {
     display: flex;
-    justify-content: center;
+    align-self: flex-end;
+    padding-right: 2rem;
+    padding-bottom: 3rem;
 }
 
 button {
-    padding: 5px;
-    margin: 1rem 5px;
-    width: 100rem;
+    padding: 7px;
+    margin: 7px 5px;
+    width: 6rem;
     border: var(--text-color) solid 1px;
     border-radius: 3px;
     font-weight: 400;
@@ -96,43 +92,29 @@ button:disabled {
     background-color: var(--bg-color);
 }
 
-footer {
-    display: flex;
-    justify-content: space-between;
-}
-
-p {
-    font-size: small;
-}
-
-a {
-    font-weight: 400;
-    letter-spacing: normal;
-    color: var(--link-color);
-}
-
-a:hover {
-    color: var(--link-hover-color);
+.keyboard {
+    height: 0;
+    width: 100%;
 }
 
 @media only screen and (max-width: 900px) {
 
-    .app {
-        width: 90%;
+    p {
+        text-align: center;
     }
 
-    h1 {
-        padding-top: 4px;
-        font-size: 1.5rem;
+    .buttons {
+        visibility: hidden;
+        height: 0;
+        padding: 0;
     }
 
     button {
-        font-size: 0.5rem;
+        font-size: x-small;
+        width: 5rem;
     }
 
-    footer {
-        line-height: 1.4rem;
-        flex-direction: column;
-        align-items: center;
+    .keyboard {
+        height: 20rem;
     }
 }
