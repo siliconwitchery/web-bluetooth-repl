@@ -58,7 +58,7 @@ export async function replSend(string) {
         };
         setTimeout(() => {
             resolve("");
-        }, 500);
+        }, 1000);
     });
 }
 
