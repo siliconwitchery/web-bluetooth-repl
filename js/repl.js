@@ -6,6 +6,10 @@ let replRawModeEnabled = false;
 let rawReplResponseString = '';
 let rawReplResponseCallbacks = {};
 
+export function replRawFlush() {
+    rawReplResponseCallbacks = {};
+}
+
 export async function replRawMode(enable) {
 
     if (enable === true) {
@@ -29,30 +33,39 @@ export async function replSend(string) {
         return;
     }
 
-    // If in raw repl mode, and string contains printable characters, append Ctrl-D
-    if (replRawModeEnabled && /[\x20-\x7F]/.test(string)) {
-        string += '\x04'
+    if (replRawModeEnabled) {
+
+        // If string contains printable characters, append Ctrl-D
+        if (/[\x20-\x7F]/.test(string)) {
+            string += '\x04'
+        }
+
+        console.log('Raw REPL ⬆️: ' +
+            string
+                .replaceAll('\n', '\\n')
+                .replaceAll('\x01', '\\x01')
+                .replaceAll('\x02', '\\x02')
+                .replaceAll('\x03', '\\x03')
+                .replaceAll('\x04', '\\x04'));
     }
 
     // Encode the UTF-8 string into an array and populate the buffer
     const encoder = new TextEncoder('utf-8');
     replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
 
-    console.log('Raw REPL ⬆️: ' + string.replaceAll('\n', '\\n'))
-
     // Return a promise which calls a function that'll eventually run when the
     // response handler calls the function associated with rawReplResponseCallbacks
     return new Promise(resolve => {
-        const callbackId = Date.now();
+        const callbackId = 1;//Date.now();
         rawReplResponseCallbacks[callbackId] = responseString => {
-            console.log('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
+            console.log('Raw REPL (' + callbackId + ') ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
             rawReplResponseString = '';
             delete rawReplResponseCallbacks[callbackId];
             resolve(responseString);
         };
         setTimeout(() => {
             resolve("");
-        }, 1000);
+        }, 500);
     });
 }
 
@@ -66,7 +79,6 @@ export function replHandleResponse(string) {
         // Once the end of response '>' is received, run the callbacks
         if (string.endsWith('>') || string.endsWith('>>> ')) {
             for (const callback of Object.values(rawReplResponseCallbacks)) {
-                console.log("callback()" + rawReplResponseString);
                 callback(rawReplResponseString);
             }
         }
