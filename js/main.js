@@ -1,13 +1,15 @@
 import { connect, isConnected } from "./bluetooth.js";
-import { replResetConsole, replSend } from "./repl.js";
+import { replHandleKeyPress, replResetConsole, replFocusCursor } from "./repl.js";
 import { checkForUpdates, startFirmwareUpdate, startFPGAUpdate } from "./update.js"
 
+const replPlaceHolderText =
+    "Welcome to the MicroPython Web Bluetooth REPL.\n\n" +
+    "Make sure you're using either Chrome Desktop, Android Chrome, or iOS Bluefy.\n\n" +
+    "Report bugs and check out the source code here: https://github.com/siliconwitchery/web-bluetooth-repl\n\n\n" +
+    "Hit any key to connect!";
+
 window.addEventListener("load", () => {
-    replConsole.innerHTML =
-        "Welcome to the MicroPython Web Bluetooth REPL. \n\n" +
-        "Make sure you're using either Chrome Desktop, Android Chrome, or iOS Bluefy.\n\n" +
-        "Report bugs and check out the source code here: https://github.com/siliconwitchery/web-bluetooth-repl\n\n\n" +
-        "Hit any key to connect!"
+    replConsole.value = replPlaceHolderText;
 });
 
 const infoText = document.getElementById('infoText');
@@ -29,75 +31,84 @@ export async function ensureConnected() {
     try {
         let connectionResult = await connect();
 
-        if (connectionResult === "repl connected") {
-            showStatus("Connected");
+        // TODO
+        if (connectionResult === "dfu connected") {
+            infoText.innerHTML = "TODO: Starting firmware update...";
+            return;
         }
 
-        if (connectionResult === "dfu connected") {
-            showStatus("TODO: Starting firmware update...");
-            return;
+        if (connectionResult === "repl connected") {
+            infoText.innerHTML = "Connected";
+            replResetConsole();
         }
 
         let updateInfo = await checkForUpdates();
 
         if (updateInfo != "") {
-            showStatus(updateInfo + " Click <a href='#' " +
+            infoText.innerHTML = updateInfo + " Click <a href='#' " +
                 "onclick='update();return false;'>" +
-                "here</a> to update.");
+                "here</a> to update.";
         }
-
-        replResetConsole();
     }
 
     catch (error) {
+        // Ignore User cancelled errors
+        if (error.message && error.message.includes("cancelled")) {
+            return;
+        }
+        infoText.innerHTML = error;
         console.error(error);
-        showStatus(error);
     }
 }
 
-export function showStatus(string) {
-    infoText.innerHTML = string;
+export function onDisconnect() {
+    if (infoText.innerHTML.includes("Reconnect")) {
+        return;
+    }
+    infoText.innerHTML = "Disconnected";
+    replResetConsole();
+    replConsole.value = replPlaceHolderText;
 }
 
-// Keep the text area always focused
+// Always keep the test area focused when pressing buttons
 setInterval(function () {
-    replConsole.focus();
+    replFocusCursor();
 }, 1000);
 
 ctrlAButton.addEventListener('click', () => {
-    replSend('\x01');
+    replHandleKeyPress("a", true, false);
 });
 
 ctrlBButton.addEventListener('click', () => {
-    replSend('\x02');
+    replHandleKeyPress("b", true, false);
 });
 
 ctrlCButton.addEventListener('click', () => {
-    replSend('\x03');
+    replHandleKeyPress("c", true, false);
 });
 
 ctrlDButton.addEventListener('click', () => {
-    replSend('\x04');
+    replHandleKeyPress("d", true, false);
 });
 
 ctrlEButton.addEventListener('click', () => {
-    replSend('\x05');
+    replHandleKeyPress("e", true, false);
 });
 
 clearButton.addEventListener('click', () => {
-    replResetConsole();
-    replSend('\x03');
+    replHandleKeyPress("k", false, true);
 });
 
 fpgaUpdateButton.addEventListener('click', () => {
     startFPGAUpdate();
 });
 
-export function receiveRawData(event) {
-    console.log(event.target.value);
-}
-
 window.update = () => {
     infoText.innerHTML = "Reconnect to the DFU device to begin the update.";
     startFirmwareUpdate();
+}
+
+// TODO
+export function receiveRawData(event) {
+    console.log(event.target.value);
 }

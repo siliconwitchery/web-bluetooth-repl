@@ -1,4 +1,4 @@
-import { receiveRawData, showStatus } from "./main.js"
+import { receiveRawData, onDisconnect } from "./main.js"
 import { replHandleResponse } from "./repl.js";
 import { nordicDfuServiceUuid } from "./nordicdfu.js"
 
@@ -100,8 +100,8 @@ export async function disconnect() {
     // Stop transmitting data
     clearInterval(replTxTaskIntervalId);
 
-    showStatus("Disconnected");
-    return Promise.resolve("disconnected");
+    // Callback to main.js
+    onDisconnect();
 }
 
 function receiveReplData(event) {

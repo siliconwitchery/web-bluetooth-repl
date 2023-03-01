@@ -71,6 +71,7 @@ export async function startFirmwareUpdate() {
     await replSendRaw("update.micropython()");
 }
 
+// TODO
 export async function startFPGAUpdate() {
     await replSendRaw('import update;update.fpga()');
 }
