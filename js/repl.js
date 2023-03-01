@@ -4,11 +4,7 @@ import { ensureConnected } from './main.js';
 let cursorPosition = 0;
 let replRawModeEnabled = false;
 let rawReplResponseString = '';
-let rawReplResponseCallbacks = {};
-
-export function replRawFlush() {
-    rawReplResponseCallbacks = {};
-}
+let rawReplResponseCallback;
 
 export async function replRawMode(enable) {
 
@@ -56,11 +52,8 @@ export async function replSend(string) {
     // Return a promise which calls a function that'll eventually run when the
     // response handler calls the function associated with rawReplResponseCallbacks
     return new Promise(resolve => {
-        const callbackId = 1;//Date.now();
-        rawReplResponseCallbacks[callbackId] = responseString => {
-            console.log('Raw REPL (' + callbackId + ') ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
-            rawReplResponseString = '';
-            delete rawReplResponseCallbacks[callbackId];
+        rawReplResponseCallback = function (responseString) {
+            console.log('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
             resolve(responseString);
         };
         setTimeout(() => {
@@ -78,9 +71,8 @@ export function replHandleResponse(string) {
 
         // Once the end of response '>' is received, run the callbacks
         if (string.endsWith('>') || string.endsWith('>>> ')) {
-            for (const callback of Object.values(rawReplResponseCallbacks)) {
-                callback(rawReplResponseString);
-            }
+            rawReplResponseCallback(rawReplResponseString);
+            rawReplResponseString = '';
         }
 
         // Don't show these strings on the console
