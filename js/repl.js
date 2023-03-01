@@ -2,8 +2,20 @@ import { isConnected, replDataTxQueue } from './bluetooth.js';
 import { ensureConnected } from './main.js';
 
 let cursorPosition = 0;
-let replSilenceFlag = false;
+let replRawModeEnabled = false;
 let rawReplResponseString = '';
+
+export async function replRawMode(enable) {
+
+    if (enable === true) {
+        replRawModeEnabled = true;
+        await replSend('\x03\x01');
+        return;
+    }
+
+    replSend('\x03\x02');
+    replRawModeEnabled = false;
+}
 
 export async function replSend(string) {
 
@@ -17,14 +29,7 @@ export async function replSend(string) {
     // Encode the UTF-8 string into an array and populate the buffer
     const encoder = new TextEncoder('utf-8');
     replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
-}
 
-export async function replSendRaw(string) {
-
-    replSilenceFlag = true;
-
-    // Ctrl-C Ctrl-A to enter Raw mode, and Ctrl to run the string
-    await replSend('\x03\x01' + string + '\x04');
     console.log('Raw REPL ⬆️: ' + string.replaceAll('\n', '\\n'))
 
     return new Promise(waitForResponse);
@@ -32,9 +37,8 @@ export async function replSendRaw(string) {
     function waitForResponse(resolve, reject) {
 
         if (rawReplResponseString.endsWith('>')) {
-            console.log('Raw REPL ⬇️: ' + rawReplResponseString.replaceAll('\n', '\\n'))
+            console.log('Raw REPL ⬇️: ' + rawReplResponseString.replaceAll('\r\n', '\\r\\n'))
             resolve(rawReplResponseString);
-            replSilenceFlag = false;
             rawReplResponseString = '';
         }
         else {
@@ -45,13 +49,14 @@ export async function replSendRaw(string) {
 
 export function replHandleResponse(string) {
 
-    if (replSilenceFlag) {
+    console.log("Printed pre " + string + replRawModeEnabled);
+    // Raw responses are handled in replSendRaw with a timer
+    rawReplResponseString += string;
 
-        // Raw responses are handled in replSendRaw with a timer
-        rawReplResponseString += string;
-
+    if (replRawModeEnabled === true) {
         return;
     }
+
     console.log("Printed " + string);
 
     // For every character in the string, i is incremented internally

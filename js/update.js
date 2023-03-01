@@ -1,12 +1,14 @@
-import { replSend, replSendRaw } from "./repl.js";
+import { replSend, replRawMode } from "./repl.js";
 import { request } from "https://cdn.skypack.dev/@octokit/request";
 
 export async function checkForUpdates() {
 
-    let response = await replSendRaw("import device;print(device.VERSION)");
+    await replRawMode(true);
+
+    let response = await replSend("import device;print(device.VERSION)\x04");
 
     if (response.includes("ImportError")) {
-        await replSend("\x03\x02"); // Exit to friendly repl
+        await replRawMode(false);
         return Promise.reject("Could not detect the firmware version. " +
             "You may have to update manually.");
     }
@@ -14,15 +16,13 @@ export async function checkForUpdates() {
     let currentVersion = response.substring(response.indexOf("v"),
         response.lastIndexOf("\r\n"));
 
-    response = await replSendRaw("print(device.GIT_REPO)");
+    response = await replSend("print(device.GIT_REPO);del(device)\x04");
 
     if (response.includes("no attribute 'GIT_REPO'")) {
-        await replSend("\x03\x02"); // Exit to friendly repl
+        await replRawMode(false);
         return Promise.reject("Could not detect the device. Current version is" +
             currentVersion + ". You may have to update manually.");
     }
-
-    await replSendRaw("del(device)");
 
     let gitRepoLink = response.substring(response.indexOf("https"),
         response.lastIndexOf('\r\n'));
@@ -38,21 +38,20 @@ export async function checkForUpdates() {
     let latestVersion = getTag.data.tag_name;
 
     if (currentVersion === latestVersion) {
-        await replSend("\x03\x02"); // Exit to friendly repl
+        await replRawMode(false);
         return Promise.resolve("");
     }
 
     if (gitRepoLink.includes("monocle")) {
-        await replSendRaw(
+        await replSend(
             "import display;" +
             "display.text('New firmware available',100,180,0xffffff);" +
             "display.show();" +
-            "del(display)"
+            "del(display)\x04"
         );
     }
 
-    await replSend("\x03\x02"); // Exit to friendly repl
-
+    await replRawMode(false);
     return Promise.resolve(
         "New firmware <a href='" +
         gitRepoLink +
@@ -64,14 +63,18 @@ export async function checkForUpdates() {
 
 export async function startFirmwareUpdate() {
 
-    await replSendRaw("import display");
-    await replSendRaw("display.text('Updating firmware...',120,180,0xffffff)");
-    await replSendRaw("display.show()");
-    await replSendRaw("import update");
-    await replSendRaw("update.micropython()");
+    await replRawMode(true);
+    await replSend("import display;" +
+        "display.text('Updating firmware...',120,180,0xffffff);" +
+        "display.show();" +
+        "import update;" +
+        "update.micropython()\x04");
+    await replRawMode(false);
 }
 
 // TODO
 export async function startFPGAUpdate() {
-    await replSendRaw('import update;update.fpga()');
+    await replRawMode(true);
+    await replSend('import update;update.fpga()\x04');
+    await replRawMode(false);
 }
