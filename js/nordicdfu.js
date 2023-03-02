@@ -1,7 +1,8 @@
+import { transmitNordicDfuControlData, transmitNordicDfuPacketData } from "./bluetooth.js"
 import { gitInfo } from "./update.js";
 import { request } from "https://cdn.skypack.dev/@octokit/request";
 
-export const nordicDfuServiceUuid = 0xfe59;
+let controlResponseCallback;
 
 export async function startNordicDFU() {
 
@@ -33,4 +34,39 @@ export async function startNordicDFU() {
     });
 
     console.log(response.data);
+
+    await nordicDfuSendControl([6, 1]);
+
+    nordicDfuSendPacket([1, 2, 3]);
 }
+
+export async function nordicDfuSendControl(bytes) {
+
+    console.log('DFU control ⬆️: ' + bytes);
+
+    transmitNordicDfuControlData(bytes);
+
+    // Return a promise which calls a function that'll eventually run when the
+    // response handler calls the function associated with controlResponseCallback
+    return new Promise(resolve => {
+        controlResponseCallback = function (responseBytes) {
+            console.log('DFU control ⬇️: ' + responseBytes);
+            resolve(responseBytes);
+        };
+        setTimeout(() => {
+            resolve("");
+        }, 1000);
+    });
+}
+
+export function nordicDfuHandleControlResponse(bytes) {
+    controlResponseCallback(bytes);
+}
+
+export function nordicDfuSendPacket(bytes) {
+    console.log('DFU packet ⬆️: ' + bytes);
+    transmitNordicDfuPacketData(bytes);
+}
+
+window.nordicDfuSendControl = nordicDfuSendControl;
+window.nordicDfuSendPacket = nordicDfuSendPacket;

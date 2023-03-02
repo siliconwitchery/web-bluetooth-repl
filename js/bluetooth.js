@@ -1,17 +1,23 @@
 import { receiveRawData, onDisconnect } from "./main.js"
 import { replHandleResponse } from "./repl.js";
-import { nordicDfuServiceUuid } from "./nordicdfu.js"
+import { nordicDfuHandleControlResponse } from './nordicdfu.js'
 
 let device = null;
+
+let nordicDfuControlCharacteristic = null;
+let nordicDfuPacketCharacteristic = null;
+const nordicDfuServiceUuid = 0xfe59;
+const nordicDfuControlCharacteristicUUID = '8ec90001-f315-4f60-9fb8-838830daea50';
+const nordicDfuPacketCharacteristicUUID = '8ec90002-f315-4f60-9fb8-838830daea50';
+
 let replRxCharacteristic = null;
 let replTxCharacteristic = null;
-let rawDataRxCharacteristic = null;
-let rawDataTxCharacteristic = null;
-
 const replDataServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const replRxCharacteristicUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 const replTxCharacteristicUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
+let rawDataRxCharacteristic = null;
+let rawDataTxCharacteristic = null;
 const rawDataServiceUuid = "e5700001-7bac-429a-b4ce-57ff900f479d";
 const rawDataRxCharacteristicUuid = "e5700002-7bac-429a-b4ce-57ff900f479d";
 const rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
@@ -69,7 +75,10 @@ export async function connect() {
         .catch(() => { });
 
     if (nordicDfuService) {
-
+        nordicDfuControlCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuControlCharacteristicUUID);
+        nordicDfuPacketCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuPacketCharacteristicUUID);
+        await nordicDfuControlCharacteristic.startNotifications();
+        nordicDfuControlCharacteristic.addEventListener('characteristicvaluechanged', receiveNordicDfuControlData);
         return Promise.resolve("dfu connected");
     }
 
@@ -102,6 +111,18 @@ export async function disconnect() {
 
     // Callback to main.js
     onDisconnect();
+}
+
+function receiveNordicDfuControlData(event) {
+    nordicDfuHandleControlResponse(new Uint8Array(event.target.value.buffer));
+}
+
+export async function transmitNordicDfuControlData(bytes) {
+    await nordicDfuControlCharacteristic.writeValue(new Uint8Array(bytes));
+}
+
+export async function transmitNordicDfuPacketData(bytes) {
+    await nordicDfuPacketCharacteristic.writeValueWithoutResponse(new Uint8Array(bytes));
 }
 
 function receiveReplData(event) {

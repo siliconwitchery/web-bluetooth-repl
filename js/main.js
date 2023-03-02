@@ -35,7 +35,7 @@ export async function ensureConnected() {
         if (connectionResult === "dfu connected") {
             infoText.innerHTML = "Starting firmware update...";
             await startNordicDFU();
-            disconnect();
+            // disconnect();
         }
 
         if (connectionResult === "repl connected") {

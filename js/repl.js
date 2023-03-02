@@ -50,7 +50,7 @@ export async function replSend(string) {
     replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
 
     // Return a promise which calls a function that'll eventually run when the
-    // response handler calls the function associated with rawReplResponseCallbacks
+    // response handler calls the function associated with rawReplResponseCallback
     return new Promise(resolve => {
         rawReplResponseCallback = function (responseString) {
             console.log('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
