@@ -34,7 +34,11 @@ export async function ensureConnected() {
 
         if (connectionResult === "dfu connected") {
             infoText.innerHTML = "Starting firmware update..";
-            await startNordicDFU();
+            await startNordicDFU()
+                .catch(() => {
+                    disconnect();
+                    throw ("Bluetooth error. Reconnect or check console for details");
+                });
             disconnect();
         }
 
@@ -56,9 +60,8 @@ export async function ensureConnected() {
         if (error.message && error.message.includes("cancelled")) {
             return;
         }
-        infoText.innerHTML = "Bluetooth error. Reconnect or check console for details";
+        infoText.innerHTML = error;
         console.error(error);
-        disconnect();
     }
 }
 

@@ -11,7 +11,7 @@ export async function checkForUpdates() {
     await new Promise(r => setTimeout(r, 100));
 
     let response = await replSend("import device;print(device.VERSION)");
-    if (response.includes("ImportError")) {
+    if (response.includes("Error")) {
         await replRawMode(false);
         return Promise.reject("Could not detect the firmware version. " +
             "You may have to update manually.");
