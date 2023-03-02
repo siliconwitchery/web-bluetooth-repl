@@ -1,26 +1,36 @@
-import { gitReleaseLink } from "./update.js";
+import { gitInfo } from "./update.js";
+import { request } from "https://cdn.skypack.dev/@octokit/request";
 
 export const nordicDfuServiceUuid = 0xfe59;
 
 export async function startNordicDFU() {
 
-    console.log(gitReleaseLink);
-    let response = await fetch(gitReleaseLink,
-        {
-            mode: 'no-cors'
-        });
-    console.log(response);
-    // TODO return if we can update from the link
+    if (!gitInfo.owner || !gitInfo.repo) {
+        // TODO
+        gitInfo.owner = 'brilliantlabsAR';
+        gitInfo.repo = 'monocle-micropython';
+    }
 
-    let input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = _ => {
-        let file = Array.from(input.files)[0];
+    let response = await request("GET /repos/{owner}/{repo}/releases/latest", {
+        owner: gitInfo.owner,
+        repo: gitInfo.repo
+    });
 
-        if (!file.type.includes('zip')) {
-            return Promise.reject('Must be a .zip file.');
+    let assetId;
+    response.data.assets.forEach((item, index) => {
+        if (item.content_type === 'application/zip') {
+            assetId = item.id;
         }
+    });
 
-    };
-    input.click();
+    response = await request("GET /repos/{owner}/{repo}/releases/assets/{assetId}", {
+        owner: gitInfo.owner,
+        repo: gitInfo.repo,
+        assetId: assetId,
+        headers: {
+            'Accept': 'application/octet-stream'
+        }
+    });
+
+    console.log(response.data);
 }

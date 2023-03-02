@@ -1,4 +1,4 @@
-import { connect, isConnected } from "./bluetooth.js";
+import { connect, disconnect, isConnected } from "./bluetooth.js";
 import { replHandleKeyPress, replResetConsole, replFocusCursor } from "./repl.js";
 import { checkForUpdates, startFirmwareUpdate, startFPGAUpdate } from "./update.js"
 import { startNordicDFU } from "./nordicdfu.js"
@@ -32,24 +32,22 @@ export async function ensureConnected() {
     try {
         let connectionResult = await connect();
 
-        // TODO
         if (connectionResult === "dfu connected") {
             infoText.innerHTML = "Starting firmware update...";
             await startNordicDFU();
-            return;
+            disconnect();
         }
 
         if (connectionResult === "repl connected") {
             infoText.innerHTML = "Connected";
             replResetConsole();
-        }
 
-        let updateInfo = await checkForUpdates();
-
-        if (updateInfo != "") {
-            infoText.innerHTML = updateInfo + " Click <a href='#' " +
-                "onclick='update();return false;'>" +
-                "here</a> to update.";
+            let updateInfo = await checkForUpdates();
+            if (updateInfo != "") {
+                infoText.innerHTML = updateInfo + " Click <a href='#' " +
+                    "onclick='update();return false;'>" +
+                    "here</a> to update.";
+            }
         }
     }
 

@@ -1,7 +1,7 @@
 import { replSend, replRawMode } from "./repl.js";
 import { request } from "https://cdn.skypack.dev/@octokit/request";
 
-export let gitReleaseLink = '';
+export let gitInfo = {};
 
 export async function checkForUpdates() {
 
@@ -28,15 +28,13 @@ export async function checkForUpdates() {
     let gitRepoLink = response.substring(response.indexOf("https"),
         response.lastIndexOf('\r\n'));
 
-    let owner = gitRepoLink.split('/')[3];
-    let repo = gitRepoLink.split('/')[4];
+    gitInfo.owner = gitRepoLink.split('/')[3];
+    gitInfo.repo = gitRepoLink.split('/')[4];
     const getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
-        owner: owner,
-        repo: repo
+        owner: gitInfo.owner,
+        repo: gitInfo.repo
     });
     let latestVersion = getTag.data.tag_name;
-    gitReleaseLink = gitRepoLink + '/releases/download/' + latestVersion +
-        '/monocle-micropython-' + latestVersion + '.zip';
 
     if (currentVersion === latestVersion) {
         await replRawMode(false);
