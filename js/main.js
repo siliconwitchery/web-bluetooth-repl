@@ -33,9 +33,9 @@ export async function ensureConnected() {
         let connectionResult = await connect();
 
         if (connectionResult === "dfu connected") {
-            infoText.innerHTML = "Starting firmware update...";
+            infoText.innerHTML = "Starting firmware update..";
             await startNordicDFU();
-            // disconnect();
+            disconnect();
         }
 
         if (connectionResult === "repl connected") {
@@ -56,7 +56,7 @@ export async function ensureConnected() {
         if (error.message && error.message.includes("cancelled")) {
             return;
         }
-        infoText.innerHTML = error;
+        infoText.innerHTML = "Bluetooth error. Reconnect or check console for details";
         console.error(error);
     }
 }
@@ -106,6 +106,10 @@ fpgaUpdateButton.addEventListener('click', () => {
 window.update = () => {
     infoText.innerHTML = "Reconnect to the DFU device to begin the update.";
     startFirmwareUpdate();
+}
+
+export function reportUpdatePercentage(percentage) {
+    infoText.innerHTML = "Updating " + percentage + "%..";
 }
 
 // TODO

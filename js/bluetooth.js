@@ -114,7 +114,7 @@ export async function disconnect() {
 }
 
 function receiveNordicDfuControlData(event) {
-    nordicDfuHandleControlResponse(new Uint8Array(event.target.value.buffer));
+    nordicDfuHandleControlResponse(event.target.value);
 }
 
 export async function transmitNordicDfuControlData(bytes) {

@@ -16,7 +16,7 @@ export async function checkForUpdates() {
         return Promise.reject("Could not detect the firmware version. " +
             "You may have to update manually.");
     }
-    let currentVersion = response.substring(response.indexOf("vv"),
+    let currentVersion = response.substring(response.indexOf("v"),
         response.lastIndexOf("\r\n"));
 
     response = await replSend("print(device.GIT_REPO);del(device)");
