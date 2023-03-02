@@ -48,6 +48,8 @@ export async function nordicDfuSendPacket(bytes) {
     const payload = new Uint8Array(bytes)
     // console.log('DFU packet ⬆️: ' + payload);
     await transmitNordicDfuPacketData(payload);
+    // Wait a little while as this is a write without response
+    await new Promise(r => setTimeout(r, 10));
 }
 
 async function obtainFiles() {
@@ -94,7 +96,6 @@ async function obtainFiles() {
 }
 
 async function transferFile(file, type) {
-
 
     let response;
 
@@ -203,5 +204,3 @@ function crc32(r) {
     }
     return (-1 ^ n) >>> 0
 }
-
-window.obtainFiles = obtainFiles;

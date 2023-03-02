@@ -58,6 +58,7 @@ export async function ensureConnected() {
         }
         infoText.innerHTML = "Bluetooth error. Reconnect or check console for details";
         console.error(error);
+        disconnect();
     }
 }
 
