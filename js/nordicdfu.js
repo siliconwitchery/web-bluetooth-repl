@@ -76,13 +76,15 @@ async function obtainFiles() {
     response = await request("GET /repos/{owner}/{repo}/releases/assets/{assetId}", {
         owner: gitInfo.owner,
         repo: gitInfo.repo,
-        assetId: assetId,
-        headers: {
-            'Accept': 'application/octet-stream'
-        }
+        assetId: assetId
     });
 
-    let zip = await JSZip.loadAsync(response.data);
+    // Annoyingly we have to fetch the data via a cors proxy
+    let download = await fetch('https://api.brilliant.xyz/firmware?url=' + response.data.browser_download_url);
+    let blob = await download.blob();
+    let buffer = await blob.arrayBuffer();
+
+    let zip = await JSZip.loadAsync(buffer);
 
     let manifest = await zip.file('manifest.json').async('string');
     let dat = await zip.file('application.dat').async('arraybuffer');
@@ -188,11 +190,6 @@ async function transferFile(file, type) {
     }
 }
 
-
-async function transferFileChunk(file, type, fileCrc, offset) {
-
-}
-
 function crc32(r) {
     for (var a, o = [], c = 0; c < 256; c++) {
         a = c;
@@ -206,3 +203,5 @@ function crc32(r) {
     }
     return (-1 ^ n) >>> 0
 }
+
+window.obtainFiles = obtainFiles;
