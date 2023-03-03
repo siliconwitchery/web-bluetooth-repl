@@ -70,8 +70,6 @@ export function onDisconnect() {
         return;
     }
     infoText.innerHTML = "Disconnected";
-    replResetConsole();
-    replConsole.value = replPlaceHolderText;
 }
 
 // Always keep the test area focused when pressing buttons

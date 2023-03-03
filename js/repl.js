@@ -133,6 +133,10 @@ export function replHandleResponse(string) {
 // Forwards keys to the repl. Returns true to prevent default behavior in the input box
 export function replHandleKeyPress(key, ctrlKey, metaKey) {
 
+    if (replRawModeEnabled) {
+        return true;
+    }
+
     if (ctrlKey) {
         switch (key) {
 
