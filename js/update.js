@@ -14,16 +14,18 @@ export async function checkForUpdates() {
     if (response.includes("Error")) {
         await replRawMode(false);
         return Promise.reject("Could not detect the firmware version. " +
-            "You may have to update manually.");
+            "You may have to update manually. " +
+            "Try typing: <b>import update;update.micropython()</b>");
     }
     let currentVersion = response.substring(response.indexOf("v"),
         response.lastIndexOf("\r\n"));
 
     response = await replSend("print(device.GIT_REPO);del(device)");
-    if (response.includes("no attribute 'GIT_REPO'")) {
+    if (response.includes("Error")) {
         await replRawMode(false);
-        return Promise.reject("Could not detect the device. Current version is" +
-            currentVersion + ". You may have to update manually.");
+        return Promise.reject("Could not detect the device. Current version is: " +
+            currentVersion + ". You may have to update manually. " +
+            "Try typing: <b>import update;update.micropython()</b>");
     }
     let gitRepoLink = response.substring(response.indexOf("https"),
         response.lastIndexOf('\r\n'));

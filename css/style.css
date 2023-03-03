@@ -49,6 +49,10 @@ p {
     text-align: right;
 }
 
+b {
+    font-weight: 400;
+}
+
 a {
     font-weight: 400;
     letter-spacing: normal;
