@@ -1,17 +1,23 @@
-import { disconnectHandler, receiveRawData } from "./main.js"
+import { receiveRawData, onDisconnect } from "./main.js"
 import { replHandleResponse } from "./repl.js";
-import { nordicDfuServiceUuid } from "./nordicdfu.js"
+import { nordicDfuHandleControlResponse } from './nordicdfu.js'
 
 let device = null;
+
+let nordicDfuControlCharacteristic = null;
+let nordicDfuPacketCharacteristic = null;
+const nordicDfuServiceUuid = 0xfe59;
+const nordicDfuControlCharacteristicUUID = '8ec90001-f315-4f60-9fb8-838830daea50';
+const nordicDfuPacketCharacteristicUUID = '8ec90002-f315-4f60-9fb8-838830daea50';
+
 let replRxCharacteristic = null;
 let replTxCharacteristic = null;
-let rawDataRxCharacteristic = null;
-let rawDataTxCharacteristic = null;
-
 const replDataServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const replRxCharacteristicUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 const replTxCharacteristicUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
+let rawDataRxCharacteristic = null;
+let rawDataTxCharacteristic = null;
 const rawDataServiceUuid = "e5700001-7bac-429a-b4ce-57ff900f479d";
 const rawDataRxCharacteristicUuid = "e5700002-7bac-429a-b4ce-57ff900f479d";
 const rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
@@ -26,35 +32,40 @@ let rawDataTxInProgress = false;
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
 const max_mtu = 100;
 
-export async function connectDisconnect() {
+export function isConnected() {
+
+    if (device && device.gatt.connected) {
+        return true;
+    }
+
+    return false;
+}
+
+export async function connect() {
 
     if (!navigator.bluetooth) {
         return Promise.reject("This browser doesn't support WebBluetooth. " +
             "Make sure you're on Chrome Desktop/Android or BlueFy iOS.")
     }
 
-    if (device && device.gatt.connected) {
-
-        await device.gatt.disconnect();
-
-        // Stop transmitting data
-        clearInterval(replTxTaskIntervalId);
-
-        device = null;
-        return Promise.resolve({status:"disconnected",device:device});
+    // Bluefy on ios currently doesn't allow multiple filters
+    if (/iPhone|iPad/.test(navigator.userAgent)) {
+        device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true
+        });
+    }
+    else {
+        device = await navigator.bluetooth.requestDevice({
+            filters: [
+                { services: [replDataServiceUuid] },
+                { services: [nordicDfuServiceUuid] },
+            ],
+            optionalServices: [rawDataServiceUuid]
+        });
     }
 
-    device = await navigator.bluetooth.requestDevice({
-
-        filters: [
-            { services: [replDataServiceUuid] },
-            { services: [nordicDfuServiceUuid] },
-        ],
-        optionalServices: [rawDataServiceUuid]
-    });
-
     const server = await device.gatt.connect()
-    device.addEventListener('gattserverdisconnected', disconnectHandler);
+    device.addEventListener('gattserverdisconnected', disconnect);
 
     const nordicDfuService = await server.getPrimaryService(nordicDfuServiceUuid)
         .catch(() => { });
@@ -64,8 +75,11 @@ export async function connectDisconnect() {
         .catch(() => { });
 
     if (nordicDfuService) {
-
-        return Promise.resolve({status:"dfu connected",device:device});
+        nordicDfuControlCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuControlCharacteristicUUID);
+        nordicDfuPacketCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuPacketCharacteristicUUID);
+        await nordicDfuControlCharacteristic.startNotifications();
+        nordicDfuControlCharacteristic.addEventListener('characteristicvaluechanged', receiveNordicDfuControlData);
+        return Promise.resolve("dfu connected");
     }
 
     if (replService) {
@@ -84,6 +98,31 @@ export async function connectDisconnect() {
     }
 
     return Promise.resolve({status:"repl connected",device:device});
+}
+
+export async function disconnect() {
+
+    if (device && device.gatt.connected) {
+        await device.gatt.disconnect();
+    }
+
+    // Stop transmitting data
+    clearInterval(replTxTaskIntervalId);
+
+    // Callback to main.js
+    onDisconnect();
+}
+
+function receiveNordicDfuControlData(event) {
+    nordicDfuHandleControlResponse(event.target.value);
+}
+
+export async function transmitNordicDfuControlData(bytes) {
+    await nordicDfuControlCharacteristic.writeValue(new Uint8Array(bytes));
+}
+
+export async function transmitNordicDfuPacketData(bytes) {
+    await nordicDfuPacketCharacteristic.writeValueWithoutResponse(new Uint8Array(bytes));
 }
 
 function receiveReplData(event) {

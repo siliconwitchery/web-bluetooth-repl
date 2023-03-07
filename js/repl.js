@@ -1,50 +1,81 @@
-import { replDataTxQueue } from "./bluetooth.js";
+import { isConnected, replDataTxQueue } from './bluetooth.js';
+import { ensureConnected } from './main.js';
 
 let cursorPosition = 0;
-let rawResponseFlag = false;
-let rawResponseString = "";
+let replRawModeEnabled = false;
+let rawReplResponseString = '';
+let rawReplResponseCallback;
 
-export function replSend(string) {
+export async function replRawMode(enable) {
+
+    if (enable === true) {
+        replRawModeEnabled = true;
+        console.log("Entering raw REPL mode");
+        await replSend('\x03\x01');
+        return;
+    }
+
+    console.log("Leaving raw REPL mode");
+    replRawModeEnabled = false;
+    replSend('\x02');
+}
+
+export async function replSend(string) {
+
+    ensureConnected();
+
+    // Strings will be thrown away if not connected
+    if (!isConnected()) {
+        return;
+    }
+
+    if (replRawModeEnabled) {
+
+        // If string contains printable characters, append Ctrl-D
+        if (/[\x20-\x7F]/.test(string)) {
+            string += '\x04'
+        }
+
+        console.log('Raw REPL ⬆️: ' +
+            string
+                .replaceAll('\n', '\\n')
+                .replaceAll('\x01', '\\x01')
+                .replaceAll('\x02', '\\x02')
+                .replaceAll('\x03', '\\x03')
+                .replaceAll('\x04', '\\x04'));
+    }
 
     // Encode the UTF-8 string into an array and populate the buffer
     const encoder = new TextEncoder('utf-8');
     replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(string));
-}
 
-export async function replSendRaw(string) {
-
-    rawResponseFlag = true;
-
-    replSend("\x03"); // Send Ctrl-C to clear the prompt
-    replSend("\x01"); // Send Ctrl-A to enter RAW mode
-    replSend(string);
-    replSend("\x04"); // Send Ctrl-D to execute
-
-    return new Promise(waitForResponse);
-
-    function waitForResponse(resolve, reject) {
-
-        if (rawResponseString.endsWith('>')) {
-
-            console.log("Received raw repl response: " + rawResponseString)
-            resolve(rawResponseString);
-            rawResponseFlag = false;
-            rawResponseString = "";
-        }
-        else {
-
-            setTimeout(waitForResponse.bind(this, resolve, reject), 100);
-        }
-    }
+    // Return a promise which calls a function that'll eventually run when the
+    // response handler calls the function associated with rawReplResponseCallback
+    return new Promise(resolve => {
+        rawReplResponseCallback = function (responseString) {
+            console.log('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
+            resolve(responseString);
+        };
+        setTimeout(() => {
+            resolve("");
+        }, 1000);
+    });
 }
 
 export function replHandleResponse(string) {
 
-    if (rawResponseFlag) {
+    if (replRawModeEnabled === true) {
 
-        // Raw responses are handled in another function
-        rawResponseString += string;
+        // Combine the string until it's ready to handle
+        rawReplResponseString += string;
 
+        // Once the end of response '>' is received, run the callbacks
+        if (string.endsWith('>') || string.endsWith('>>> ')) {
+            rawReplResponseCallback(rawReplResponseString);
+            rawReplResponseString = '';
+        }
+
+        // Don't show these strings on the console
         return;
     }
 
@@ -99,46 +130,51 @@ export function replHandleResponse(string) {
     replConsole.scrollTop = replConsole.scrollHeight;
 }
 
+// Forwards keys to the repl. Returns true to prevent default behavior in the input box
 export function replHandleKeyPress(key, ctrlKey, metaKey) {
+
+    if (replRawModeEnabled) {
+        return true;
+    }
 
     if (ctrlKey) {
         switch (key) {
 
             case 'a':
-                replSend("\x01"); // Send Ctrl-A
+                replSend('\x01');
                 break;
 
             case 'b':
-                replSend("\x02"); // Send Ctrl-B
+                replSend('\x02');
                 break;
 
             case 'c':
-                // If text is selected, copy instead of sending Ctrl-C
+                // If text is selected, allow copy instead of sending Ctrl-C
                 if (replConsole.selectionStart != replConsole.selectionEnd) {
                     return false;
                 }
-                replSend("\x03"); // Send Ctrl-C
+                replSend('\x03');
                 break;
 
             case 'd':
-                replSend("\x04"); // Send Ctrl-D
+                replSend('\x04');
                 break;
 
             case 'e':
-                replSend("\x05"); // Send Ctrl-D
+                replSend('\x05');
                 break;
 
             case 'k':
-                replConsole.value = "";
-                cursorPosition = 0;
-                replSend("\x03"); // Send Ctrl-C
+                replResetConsole();
+                replSend('\x03');
                 break;
 
-            case 'v':
-                // Allow pasting
+            // Allow all other key combinations
+            default:
                 return false;
         }
 
+        // Don't process the key singly
         return true;
     }
 
@@ -146,73 +182,75 @@ export function replHandleKeyPress(key, ctrlKey, metaKey) {
         switch (key) {
 
             case 'k':
-                replConsole.value = "";
-                cursorPosition = 0;
-                replSend("\x03"); // Send Ctrl-C
+                replResetConsole();
+                replSend('\x03');
                 break;
-
-            case 'c':
-                // Allow copy
-                return false;
-
-            case 'v':
-                // Allow pasting
-                return false;
 
             case 'Backspace':
                 replSend(
-                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
-                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
-                    "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+                    '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b' +
+                    '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b' +
+                    '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
                 break;
 
             case 'ArrowRight':
-                replSend("\x1B[F"); // Send End key
+                // Send End key
+                replSend('\x1B[F');
                 break;
 
             case 'ArrowLeft':
-                replSend("\x1B[H"); // Send Home key
+                // Send Home key
+                replSend('\x1B[H');
                 break;
+
+            // Allow all other key combinations
+            default:
+                return false;
         }
 
+        // Don't process the key singly
         return true;
     }
 
     switch (key) {
 
         case 'Backspace':
-            replSend("\x08"); // Send backspace
+            replSend('\x08');
             break;
 
         case 'ArrowUp':
-            replSend("\x1B[A"); // Send up arrow key
+            replSend('\x1B[A');
             break;
 
         case 'ArrowDown':
-            replSend("\x1B[B"); // Send down arrow key
+            replSend('\x1B[B');
             break;
 
         case 'ArrowRight':
-            replSend("\x1B[C"); // Send right arrow key
+            replSend('\x1B[C');
             break;
 
         case 'ArrowLeft':
-            replSend("\x1B[D"); // Send left arrow key
+            replSend('\x1B[D');
             break;
 
         case 'Tab':
-            replSend("\x09"); // Send Tab key
+            replSend('\x09');
             break;
 
         case 'Enter':
-            replSend("\x1B[F\r\n"); // Send End key before sending \r\n
+            // Send End key before sending \r
+            replSend('\x1B[F\r');
             break;
 
         default:
-            // Only printable keys
-            if (key.length == 1) {
-                replSend(key)
+            // Ignore special keys like F1, F2 etc 
+            if (key.length > 1) {
+                return false;
             }
+
+            // Send all other single keys to the repl
+            replSend(key)
             break;
     }
 
@@ -239,4 +277,14 @@ export function replResetConsole() {
 
     replConsole.value = '';
     cursorPosition = 0;
+}
+
+export function replFocusCursor() {
+    // Don't refocus when selecting
+    if (replConsole.selectionStart != replConsole.selectionEnd) {
+        return;
+    }
+    replConsole.focus();
+    replConsole.selectionStart = cursorPosition;
+    replConsole.selectionEnd = cursorPosition;
 }

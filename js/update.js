@@ -1,49 +1,50 @@
-import { replSend, replSendRaw } from "./repl.js";
+import { replSend, replRawMode } from "./repl.js";
 import { request } from "https://cdn.skypack.dev/@octokit/request";
+
+export let gitInfo = {};
 
 export async function checkForUpdates() {
 
-    let response = await replSendRaw("import device;print(device.VERSION)");
+    await replRawMode(true);
 
-    if (response.includes("ImportError")) {
-        replSend("\x03\x02"); // Exit to friendly repl
+    // Short delay to throw away bluetooth data received upon connection
+    await new Promise(r => setTimeout(r, 100));
+
+    let response = await replSend("import device;print(device.VERSION)");
+    if (response.includes("Error")) {
+        await replRawMode(false);
         return Promise.reject("Could not detect the firmware version. " +
-            "You may have to update manually.");
+            "You may have to update manually. " +
+            "Try typing: <b>import update;update.micropython()</b>");
     }
-
     let currentVersion = response.substring(response.indexOf("v"),
         response.lastIndexOf("\r\n"));
 
-    response = await replSendRaw("print(device.GIT_REPO)");
-
-    if (response.includes("no attribute 'GIT_REPO'")) {
-        replSend("\x03\x02"); // Exit to friendly repl
-        return Promise.reject("Could not detect the device. Current version is" +
-            currentVersion + ". You may have to update manually.");
+    response = await replSend("print(device.GIT_REPO);del(device)");
+    if (response.includes("Error")) {
+        await replRawMode(false);
+        return Promise.reject("Could not detect the device. Current version is: " +
+            currentVersion + ". You may have to update manually. " +
+            "Try typing: <b>import update;update.micropython()</b>");
     }
-
-    await replSendRaw("del(device)");
-
     let gitRepoLink = response.substring(response.indexOf("https"),
         response.lastIndexOf('\r\n'));
 
-    let owner = gitRepoLink.split('/')[3];
-    let repo = gitRepoLink.split('/')[4];
-
+    gitInfo.owner = gitRepoLink.split('/')[3];
+    gitInfo.repo = gitRepoLink.split('/')[4];
     const getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
-        owner: owner,
-        repo: repo
+        owner: gitInfo.owner,
+        repo: gitInfo.repo
     });
-
     let latestVersion = getTag.data.tag_name;
 
     if (currentVersion === latestVersion) {
-        replSend("\x03\x02"); // Exit to friendly repl
+        await replRawMode(false);
         return Promise.resolve("");
     }
 
     if (gitRepoLink.includes("monocle")) {
-        await replSendRaw(
+        await replSend(
             "import display;" +
             "display.text('New firmware available',100,180,0xffffff);" +
             "display.show();" +
@@ -51,8 +52,7 @@ export async function checkForUpdates() {
         );
     }
 
-    replSend("\x03\x02"); // Exit to friendly repl
-
+    await replRawMode(false);
     return Promise.resolve(
         "New firmware <a href='" +
         gitRepoLink +
@@ -62,15 +62,20 @@ export async function checkForUpdates() {
     );
 }
 
-export function startFirmwareUpdate() {
+export async function startFirmwareUpdate() {
 
-    replSendRaw("import display");
-    replSendRaw("display.text('Updating firmware...',120,180,0xffffff)");
-    replSendRaw("display.show()");
-    setTimeout(()=>{
-        replSendRaw("import update");
-        replSendRaw("update.micropython()");
-        replSendRaw("print('UPDATE STARTED')");
-    },10)
-    
+    await replRawMode(true);
+    await replSend("import display;" +
+        "display.text('Updating firmware...',120,180,0xffffff);" +
+        "display.show();" +
+        "import update;" +
+        "update.micropython()");
+    await replRawMode(false);
+}
+
+// TODO
+export async function startFPGAUpdate() {
+    await replRawMode(true);
+    await replSend('import update;update.fpga()');
+    await replRawMode(false);
 }
