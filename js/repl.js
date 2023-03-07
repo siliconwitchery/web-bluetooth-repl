@@ -269,7 +269,15 @@ replConsole.addEventListener('keydown', (event) => {
 // This handles paste events
 replConsole.addEventListener('beforeinput', (event) => {
 
-    replSend(event.data.replaceAll('\n', '\r'));
+    let string = event.data;
+
+    // Convert CRLF to just LF in the case of windows style line endings
+    string = string.replaceAll('\r\n', '\r');
+
+    // Convert LF to CR in the case of Unix style line endings
+    string = string.replaceAll('\n', '\r');
+
+    replSend(string);
     event.preventDefault();
 });
 
