@@ -1,6 +1,6 @@
 import { connect, disconnect, isConnected } from "./bluetooth.js";
 import { replHandleKeyPress, replResetConsole, replFocusCursor } from "./repl.js";
-import { checkForUpdates, startFirmwareUpdate, startFPGAUpdate } from "./update.js"
+import { checkForUpdates, startFirmwareUpdate, startFpgaUpdate } from "./update.js"
 import { startNordicDFU } from "./nordicdfu.js"
 
 const replPlaceHolderText =
@@ -102,7 +102,7 @@ clearButton.addEventListener('click', () => {
 });
 
 fpgaUpdateButton.addEventListener('click', () => {
-    startFPGAUpdate();
+    startFpgaUpdate();
 });
 
 window.update = () => {

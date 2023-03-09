@@ -2,7 +2,7 @@
 // https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.1.0/lib_dfu_transport_ble.html
 
 import { transmitNordicDfuControlData, transmitNordicDfuPacketData } from "./bluetooth.js"
-import { gitInfo } from "./update.js";
+import { micropythonGit } from "./update.js";
 import { reportUpdatePercentage } from "./main.js"
 import { request } from "https://cdn.skypack.dev/@octokit/request";
 import JSZip from "https://cdn.skypack.dev/jszip"
@@ -54,18 +54,18 @@ export async function nordicDfuSendPacket(bytes) {
 
 async function obtainFiles() {
 
-    if (!gitInfo.owner || !gitInfo.repo) {
+    if (!micropythonGit.owner || !micropythonGit.repo) {
         // TODO
-        gitInfo.owner = 'brilliantlabsAR';
-        gitInfo.repo = 'monocle-micropython';
+        micropythonGit.owner = 'brilliantlabsAR';
+        micropythonGit.repo = 'monocle-micropython';
     }
 
     console.log("Downloading latest release from: github.com/" +
-        gitInfo.owner + "/" + gitInfo.repo);
+        micropythonGit.owner + "/" + micropythonGit.repo);
 
     let response = await request("GET /repos/{owner}/{repo}/releases/latest", {
-        owner: gitInfo.owner,
-        repo: gitInfo.repo
+        owner: micropythonGit.owner,
+        repo: micropythonGit.repo
     });
 
     let assetId;
@@ -76,8 +76,8 @@ async function obtainFiles() {
     });
 
     response = await request("GET /repos/{owner}/{repo}/releases/assets/{assetId}", {
-        owner: gitInfo.owner,
-        repo: gitInfo.repo,
+        owner: micropythonGit.owner,
+        repo: micropythonGit.repo,
         assetId: assetId
     });
 
