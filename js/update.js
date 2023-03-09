@@ -75,37 +75,37 @@ export async function startFirmwareUpdate() {
     await replRawMode(false);
 }
 
-// TODO
 export async function startFpgaUpdate() {
 
+    console.log("Starting FPGA update");
     let file = await obtainFpgaFile();
 
-    // Convert to base64 string
+    console.log("Converting " + file.byteLength + " bytes of file to base64");
     let bytes = new Uint8Array(file);
-    let len = bytes.byteLength;
     let binary = '';
-    for (let i = 0; i < len; i++) {
+    for (let i = 0; i < bytes.byteLength; i++) {
         binary += String.fromCharCode(bytes[i]);
     }
     let asciiFile = btoa(binary);
 
-    console.log("Total: " + asciiFile.length);
-
     await replRawMode(true);
-
-    await replSend('import ubinascii;import storage');
+    await replSend('import ubinascii;import storage;import device');
     await replSend('storage.delete("FPGA_BITSTREAM")');
 
-    let chunks = Math.ceil(asciiFile.length / 256);
+    let chunk_size = 340; // Corresponds to 255 bytes
+    let chunks = Math.ceil(asciiFile.length / chunk_size);
     for (let chk = 0; chk < chunks; chk++) {
         await replSend('storage.append("FPGA_BITSTREAM",ubinascii.a2b_base64("' +
-            asciiFile.slice(chk * 256, (chk * 256) + 256)
+            asciiFile.slice(chk * chunk_size, (chk * chunk_size) + chunk_size)
             + '"))');
-
-        reportUpdatePercentage(Math.round((100 / asciiFile.length) * chk * 256));
+        reportUpdatePercentage((100 / asciiFile.length) * chk * chunk_size);
     }
 
+    await replSend('storage.append("FPGA_BITSTREAM","BITSTREAM_WRITTEN")');
+    await replSend('device.reset()');
     await replRawMode(false);
+
+    console.log("Completed FPGA update. Resetting");
 }
 
 async function obtainFpgaFile() {

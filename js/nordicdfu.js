@@ -172,7 +172,7 @@ async function transferFile(file, type) {
             fileOffset += fileSlice.byteLength;
 
             await nordicDfuSendPacket(fileSlice);
-            reportUpdatePercentage(Math.round((100 / fileSize) * fileOffset));
+            reportUpdatePercentage((100 / fileSize) * fileOffset);
         }
 
         // Calculate CRC

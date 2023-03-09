@@ -33,7 +33,7 @@ export async function ensureConnected() {
         let connectionResult = await connect();
 
         if (connectionResult === "dfu connected") {
-            infoText.innerHTML = "Starting firmware update..";
+            infoText.innerHTML = "Starting firmware update";
             await startNordicDFU()
                 .catch(() => {
                     disconnect();
@@ -50,7 +50,7 @@ export async function ensureConnected() {
             if (updateInfo != "") {
                 infoText.innerHTML = updateInfo + " Click <a href='#' " +
                     "onclick='update();return false;'>" +
-                    "here</a> to update.";
+                    "here</a> to update";
             }
         }
     }
@@ -103,15 +103,16 @@ clearButton.addEventListener('click', () => {
 
 fpgaUpdateButton.addEventListener('click', () => {
     startFpgaUpdate();
+    infoText.innerHTML = "FPGA update completed. Reconnect";
 });
 
 window.update = () => {
-    infoText.innerHTML = "Reconnect to the DFU device to begin the update.";
+    infoText.innerHTML = "Reconnect to the DFU device to begin the update";
     startFirmwareUpdate();
 }
 
 export function reportUpdatePercentage(percentage) {
-    infoText.innerHTML = "Updating " + percentage + "%..";
+    infoText.innerHTML = "Updating " + percentage.toFixed(2) + "%";
 }
 
 // TODO
