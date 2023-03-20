@@ -76,11 +76,19 @@ export async function startFirmwareUpdate() {
     await replRawMode(false);
 }
 
+let fpga_update_in_progress = false;
+
 export async function startFpgaUpdate() {
 
     if (!isConnected()) {
         return Promise.reject("Connect to Monocle first.");
     }
+
+    if (fpga_update_in_progress === true) {
+        return Promise.reject("FPGA update already in progress.");
+    }
+
+    fpga_update_in_progress = true;
 
     console.log("Starting FPGA update");
     let file = await obtainFpgaFile();
@@ -117,6 +125,8 @@ export async function startFpgaUpdate() {
     await replRawMode(false);
 
     console.log("Completed FPGA update. Resetting");
+
+    fpga_update_in_progress = false;
 }
 
 async function obtainFpgaFile() {
