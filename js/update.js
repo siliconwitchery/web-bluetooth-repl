@@ -81,6 +81,7 @@ export async function startFpgaUpdate() {
     if (!isConnected()) {
         return Promise.reject("Connect to Monocle first.");
     }
+
     console.log("Starting FPGA update");
     let file = await obtainFpgaFile();
 
