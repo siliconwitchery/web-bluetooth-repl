@@ -100,9 +100,15 @@ export async function startFpgaUpdate() {
     let chunk_size = 340; // Corresponds to 255 bytes
     let chunks = Math.ceil(asciiFile.length / chunk_size);
     for (let chk = 0; chk < chunks; chk++) {
-        await replSend('storage.append("FPGA_BITSTREAM",ubinascii.a2b_base64("' +
+        let response = await replSend('storage.append("FPGA_BITSTREAM",ubinascii.a2b_base64("' +
             asciiFile.slice(chk * chunk_size, (chk * chunk_size) + chunk_size)
             + '"))');
+
+        if (response.includes("Error")) {
+            console.log("Retrying this chunk");
+            chk--;
+        }
+
         reportUpdatePercentage((100 / asciiFile.length) * chk * chunk_size);
     }
 
