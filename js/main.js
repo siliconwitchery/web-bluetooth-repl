@@ -1,6 +1,6 @@
 import { connect, disconnect, isConnected } from "./bluetooth.js";
 import { replHandleKeyPress, replResetConsole, replFocusCursor } from "./repl.js";
-import { checkForUpdates, startFirmwareUpdate, startFPGAUpdate } from "./update.js"
+import { checkForUpdates, startFirmwareUpdate, startFpgaUpdate } from "./update.js"
 import { startNordicDFU } from "./nordicdfu.js"
 
 const replPlaceHolderText =
@@ -33,7 +33,7 @@ export async function ensureConnected() {
         let connectionResult = await connect();
 
         if (connectionResult === "dfu connected") {
-            infoText.innerHTML = "Starting firmware update..";
+            infoText.innerHTML = "Starting firmware update";
             await startNordicDFU()
                 .catch(() => {
                     disconnect();
@@ -50,7 +50,7 @@ export async function ensureConnected() {
             if (updateInfo != "") {
                 infoText.innerHTML = updateInfo + " Click <a href='#' " +
                     "onclick='update();return false;'>" +
-                    "here</a> to update.";
+                    "here</a> to update";
             }
         }
     }
@@ -102,16 +102,22 @@ clearButton.addEventListener('click', () => {
 });
 
 fpgaUpdateButton.addEventListener('click', () => {
-    startFPGAUpdate();
+    startFpgaUpdate()
+        .then(() => {
+            infoText.innerHTML = "FPGA update completed. Reconnect";
+        })
+        .catch(error => {
+            infoText.innerHTML = error;
+        })
 });
 
 window.update = () => {
-    infoText.innerHTML = "Reconnect to the DFU device to begin the update.";
+    infoText.innerHTML = "Reconnect to the DFU device to begin the update";
     startFirmwareUpdate();
 }
 
 export function reportUpdatePercentage(percentage) {
-    infoText.innerHTML = "Updating " + percentage + "%..";
+    infoText.innerHTML = "Updating " + percentage.toFixed(2) + "%";
 }
 
 // TODO
