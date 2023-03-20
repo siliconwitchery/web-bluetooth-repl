@@ -102,8 +102,13 @@ clearButton.addEventListener('click', () => {
 });
 
 fpgaUpdateButton.addEventListener('click', () => {
-    startFpgaUpdate();
-    infoText.innerHTML = "FPGA update completed. Reconnect";
+    startFpgaUpdate()
+        .then(() => {
+            infoText.innerHTML = "FPGA update completed. Reconnect";
+        })
+        .catch(error => {
+            infoText.innerHTML = error;
+        })
 });
 
 window.update = () => {

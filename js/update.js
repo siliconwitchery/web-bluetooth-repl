@@ -1,5 +1,6 @@
 import { reportUpdatePercentage } from "./main.js"
 import { replSend, replRawMode } from "./repl.js";
+import { isConnected } from "./bluetooth.js";
 import { request } from "https://cdn.skypack.dev/@octokit/request";
 
 export let micropythonGit = {};
@@ -77,6 +78,9 @@ export async function startFirmwareUpdate() {
 
 export async function startFpgaUpdate() {
 
+    if (!isConnected()) {
+        return Promise.reject("Connect to Monocle first.");
+    }
     console.log("Starting FPGA update");
     let file = await obtainFpgaFile();
 
