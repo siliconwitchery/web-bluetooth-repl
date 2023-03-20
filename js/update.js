@@ -97,7 +97,7 @@ export async function startFpgaUpdate() {
     await replSend('import ubinascii;import storage;import device');
     await replSend('storage.delete("FPGA_BITSTREAM")');
 
-    let chunk_size = 340; // Corresponds to 255 bytes
+    let chunk_size = 84;
     let chunks = Math.ceil(asciiFile.length / chunk_size);
     for (let chk = 0; chk < chunks; chk++) {
         let response = await replSend('storage.append("FPGA_BITSTREAM",ubinascii.a2b_base64("' +
