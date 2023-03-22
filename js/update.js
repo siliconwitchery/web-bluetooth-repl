@@ -102,15 +102,15 @@ export async function startFpgaUpdate() {
     let asciiFile = btoa(binary);
 
     await replRawMode(true);
-    await replSend('import ubinascii;import storage;import device');
-    await replSend('storage.delete("FPGA_BITSTREAM")');
+    await replSend('import ubinascii;import fpga;import device');
+    await replSend('fpga.App.delete()');
 
     let chunk_size = 84;
     let chunks = Math.ceil(asciiFile.length / chunk_size);
     for (let chk = 0; chk < chunks; chk++) {
-        let response = await replSend('storage.append("FPGA_BITSTREAM",ubinascii.a2b_base64("' +
+        let response = await replSend("fpga.App.write(ubinascii.a2b_base64(b'" +
             asciiFile.slice(chk * chunk_size, (chk * chunk_size) + chunk_size)
-            + '"))');
+            + "'))");
 
         if (response.includes("Error")) {
             console.log("Retrying this chunk");
@@ -120,7 +120,7 @@ export async function startFpgaUpdate() {
         reportUpdatePercentage((100 / asciiFile.length) * chk * chunk_size);
     }
 
-    await replSend('storage.append("FPGA_BITSTREAM","BITSTREAM_WRITTEN")');
+    await replSend("fpga.App.write(b'done')");
     await replSend('device.reset()');
     await replRawMode(false);
 
