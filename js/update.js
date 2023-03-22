@@ -102,13 +102,13 @@ export async function startFpgaUpdate() {
     let asciiFile = btoa(binary);
 
     await replRawMode(true);
-    await replSend('import ubinascii;import fpga;import device');
-    await replSend('fpga.App.delete()');
+    await replSend('import ubinascii;import update;import device');
+    await replSend('update.Fpga.delete()');
 
     let chunk_size = 84;
     let chunks = Math.ceil(asciiFile.length / chunk_size);
     for (let chk = 0; chk < chunks; chk++) {
-        let response = await replSend("fpga.App.write(ubinascii.a2b_base64(b'" +
+        let response = await replSend("update.Fpga.write(ubinascii.a2b_base64(b'" +
             asciiFile.slice(chk * chunk_size, (chk * chunk_size) + chunk_size)
             + "'))");
 
@@ -120,7 +120,7 @@ export async function startFpgaUpdate() {
         reportUpdatePercentage((100 / asciiFile.length) * chk * chunk_size);
     }
 
-    await replSend("fpga.App.write(b'done')");
+    await replSend("update.Fpga.write(b'done')");
     await replSend('device.reset()');
     await replRawMode(false);
 
