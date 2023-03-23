@@ -103,7 +103,7 @@ export async function startFpgaUpdate() {
 
     await replRawMode(true);
     await replSend('import ubinascii;import update;import device');
-    await replSend('update.Fpga.delete()');
+    await replSend('update.Fpga.erase()');
 
     let chunk_size = 84;
     let chunks = Math.ceil(asciiFile.length / chunk_size);
