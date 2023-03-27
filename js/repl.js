@@ -9,6 +9,12 @@ let rawReplResponseCallback;
 export async function replRawMode(enable) {
 
     if (enable === true) {
+
+        // Prevent multiple entries to raw mode
+        if (replRawModeEnabled) {
+            return Promise.reject("REPL is busy. Wait until current operations are complete");
+        }
+
         replRawModeEnabled = true;
         console.log("Entering raw REPL mode");
         await replSend('\x03\x01');

@@ -98,13 +98,24 @@ export async function startFpgaUpdate(file) {
         return Promise.reject("FPGA update already in progress");
     }
 
-    fpga_update_in_progress = true;
+    await replRawMode(true).catch((error) => {
+        return Promise.reject(error);
+    });
 
-    console.log("Starting FPGA update");
     if (file === undefined) {
         file = await downloadLatestFpgaImage();
     }
 
+    fpga_update_in_progress = true;
+    await updateFPGA(file);
+    fpga_update_in_progress = false;
+
+    await replRawMode(false);
+}
+
+async function updateFPGA(file) {
+
+    console.log("Starting FPGA update");
     console.log("Converting " + file.byteLength + " bytes of file to base64");
     let bytes = new Uint8Array(file);
     let binary = '';
@@ -113,14 +124,19 @@ export async function startFpgaUpdate(file) {
     }
     let asciiFile = btoa(binary);
 
-    await replRawMode(true);
-    await replSend('import ubinascii;import update;import device');
-    await replSend('update.Fpga.erase()');
+    await replSend('import ubinascii, update, device, bluetooth');
 
-    let chunk_size = 84;
+    let response = await replSend('print(bluetooth.max_length())');
+    const maxMtu = parseInt(response.match(/\d/g).join(''), 10);
+
+    // 45 is the string length of the update string. Calculates base64 chunk length
+    let chunk_size = (Math.floor(Math.floor((maxMtu - 45) / 3) / 4) * 4 * 3);
     let chunks = Math.ceil(asciiFile.length / chunk_size);
+    console.log("Chunk size = " + chunk_size + ". Total chunks = " + chunks);
+
+    await replSend('update.Fpga.erase()');
     for (let chk = 0; chk < chunks; chk++) {
-        let response = await replSend("update.Fpga.write(ubinascii.a2b_base64(b'" +
+        response = await replSend("update.Fpga.write(ubinascii.a2b_base64(b'" +
             asciiFile.slice(chk * chunk_size, (chk * chunk_size) + chunk_size)
             + "'))");
 
@@ -134,11 +150,8 @@ export async function startFpgaUpdate(file) {
 
     await replSend("update.Fpga.write(b'done')");
     await replSend('device.reset()');
-    await replRawMode(false);
 
     console.log("Completed FPGA update. Resetting");
-
-    fpga_update_in_progress = false;
 }
 
 async function downloadLatestFpgaImage() {
