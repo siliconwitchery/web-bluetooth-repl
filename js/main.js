@@ -43,15 +43,8 @@ export async function ensureConnected() {
         }
 
         if (connectionResult === "repl connected") {
-            infoText.innerHTML = "Connected";
+            infoText.innerHTML = await checkForUpdates();
             replResetConsole();
-
-            let updateInfo = await checkForUpdates();
-            if (updateInfo != "") {
-                infoText.innerHTML = updateInfo + " Click <a href='#' " +
-                    "onclick='update();return false;'>" +
-                    "here</a> to update";
-            }
         }
     }
 
@@ -101,7 +94,50 @@ clearButton.addEventListener('click', () => {
     replHandleKeyPress("k", false, true);
 });
 
-fpgaUpdateButton.addEventListener('click', () => {
+window.updateFpgaFromFile = (input) => {
+
+    if (input.files.length === 0) {
+        return;
+    }
+
+    let file = input.files[0];
+
+    if (file.type != 'application/macbinary' ||
+        file.size != 444430) {
+        infoText.innerHTML = "Invalid FPGA file. Expected a .bin file that should be 444kB";
+        return;
+    }
+
+    let reader = new FileReader();
+
+    reader.readAsArrayBuffer(file);
+
+    reader.onload = function () {
+        startFpgaUpdate(reader.result)
+            .then(() => {
+                infoText.innerHTML = "FPGA update completed. Reconnect";
+            })
+            .catch(error => {
+                infoText.innerHTML = error;
+            })
+    };
+
+    reader.onerror = function () {
+        infoText.innerHTML = reader.error;
+    };
+}
+
+window.updateFirmware = () => {
+    startFirmwareUpdate()
+        .then(() => {
+            infoText.innerHTML = "Reconnect to <b>DFUTarg</b> to begin the update";
+        })
+        .catch(error => {
+            infoText.innerHTML = error;
+        })
+}
+
+window.updateFpga = () => {
     startFpgaUpdate()
         .then(() => {
             infoText.innerHTML = "FPGA update completed. Reconnect";
@@ -109,11 +145,6 @@ fpgaUpdateButton.addEventListener('click', () => {
         .catch(error => {
             infoText.innerHTML = error;
         })
-});
-
-window.update = () => {
-    infoText.innerHTML = "Reconnect to the DFU device to begin the update";
-    startFirmwareUpdate();
 }
 
 export function reportUpdatePercentage(percentage) {

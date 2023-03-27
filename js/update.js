@@ -13,85 +13,97 @@ export async function checkForUpdates() {
     // Short delay to throw away bluetooth data received upon connection
     await new Promise(r => setTimeout(r, 100));
 
+    let message = await getUpdateInfo();
+
+    await replRawMode(false);
+
+    return message;
+}
+
+async function getUpdateInfo() {
+
+    // Check nRF firmware
     let response = await replSend("import device;print(device.VERSION)");
     if (response.includes("Error")) {
-        await replRawMode(false);
-        return Promise.reject("Could not detect the firmware version. " +
-            "You may have to update manually. " +
-            "Try typing: <b>import update;update.micropython()</b>");
+        return "Could not detect the firmware version. You may have to update" +
+            " manually. Try typing: <b>import update;update.micropython()</b>";
     }
     let currentVersion = response.substring(response.indexOf("v"),
         response.lastIndexOf("\r\n"));
 
     response = await replSend("print(device.GIT_REPO);del(device)");
     if (response.includes("Error")) {
-        await replRawMode(false);
-        return Promise.reject("Could not detect the device. Current version is: " +
-            currentVersion + ". You may have to update manually. " +
-            "Try typing: <b>import update;update.micropython()</b>");
+        return "Could not detect the device. Current version is: " +
+            currentVersion + ". You may have to update manually. Try typing: " +
+            "<b>import update;update.micropython()</b>";
     }
     let gitRepoLink = response.substring(response.indexOf("https"),
         response.lastIndexOf('\r\n'));
 
     micropythonGit.owner = gitRepoLink.split('/')[3];
     micropythonGit.repo = gitRepoLink.split('/')[4];
-    const getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
+    let getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
         owner: micropythonGit.owner,
         repo: micropythonGit.repo
     });
     let latestVersion = getTag.data.tag_name;
 
-    if (currentVersion === latestVersion) {
-        await replRawMode(false);
-        return Promise.resolve("");
+    if (currentVersion != latestVersion) {
+        return "New firmware <a href='" + gitRepoLink + "/releases/latest' " +
+            "target='_blank'>(" + latestVersion + ")</a> available. Click " +
+            "<a href='#' onclick='updateFirmware();return false;'>here</a> to update";
     }
 
-    if (gitRepoLink.includes("monocle")) {
-        await replSend(
-            "import display;" +
-            "display.text('New firmware available',100,180,0xffffff);" +
-            "display.show();" +
-            "del(display)"
-        );
+    // Check FPGA image
+    fpgaGit.owner = micropythonGit.owner;
+    fpgaGit.repo = micropythonGit.repo.replace("micropython", "fpga");
+    getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
+        owner: fpgaGit.owner,
+        repo: fpgaGit.repo
+    });
+    latestVersion = getTag.data.tag_name;
+
+    response = await replSend("import fpga;" +
+        "print('v'+(lambda:''.join('%02x' % i for i in fpga.read(2,3)))());" +
+        "del(fpga)");
+    if (response.includes("Error")) {
+        return "Could not detect the FPGA image. Click " +
+            "<a href='#' onclick='updateFpga();return false;'>here</a> to update";
     }
 
-    await replRawMode(false);
-    return Promise.resolve(
-        "New firmware <a href='" +
-        gitRepoLink +
-        "/releases/latest' target='_blank'>(" +
-        latestVersion +
-        ")</a> available."
-    );
+    if (!response.includes(latestVersion)) {
+        return "New FPGA image available. Click " +
+            "<a href='#' onclick='updateFpga();return false;'>here</a> to update";
+    }
+
+    return "Connected. Device is up to date";
 }
 
 export async function startFirmwareUpdate() {
 
     await replRawMode(true);
-    await replSend("import display;" +
-        "display.text('Updating firmware...',120,180,0xffffff);" +
-        "display.show();" +
-        "import update;" +
-        "update.micropython()");
+    await replSend("import update;update.micropython()");
     await replRawMode(false);
 }
 
 let fpga_update_in_progress = false;
 
-export async function startFpgaUpdate() {
+export async function startFpgaUpdate(file) {
 
     if (!isConnected()) {
-        return Promise.reject("Connect to Monocle first.");
+        return Promise.reject("Connect to Monocle first");
     }
 
     if (fpga_update_in_progress === true) {
-        return Promise.reject("FPGA update already in progress.");
+        return Promise.reject("FPGA update already in progress");
     }
 
     fpga_update_in_progress = true;
 
     console.log("Starting FPGA update");
-    let file = await obtainFpgaFile();
+    if (file === undefined) {
+        file = await downloadLatestFpgaImage();
+    }
 
     console.log("Converting " + file.byteLength + " bytes of file to base64");
     let bytes = new Uint8Array(file);
@@ -129,13 +141,7 @@ export async function startFpgaUpdate() {
     fpga_update_in_progress = false;
 }
 
-async function obtainFpgaFile() {
-
-    if (!fpgaGit.owner || !fpgaGit.repo) {
-        // TODO
-        fpgaGit.owner = 'brilliantlabsAR';
-        fpgaGit.repo = 'monocle-fpga';
-    }
+async function downloadLatestFpgaImage() {
 
     console.log("Downloading latest release from: github.com/" +
         fpgaGit.owner + "/" + fpgaGit.repo);

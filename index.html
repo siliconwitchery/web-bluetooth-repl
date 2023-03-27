@@ -60,8 +60,8 @@
         <button id="clearButton" name="controlButton" title="Clear entire terminal (Ctrl-K)">
             Clear
         </button>
-        <button id="fpgaUpdateButton" name="controlButton" title="Update FPGA binary">
-            Upload
+        <button onclick="uploadButton.click()" title="Upload custom FPGA image">
+            <input type="file" id="uploadButton" onclick="this.value=null;" onchange="updateFpgaFromFile(this)">Upload
         </button>
     </div>
 

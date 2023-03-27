@@ -1,5 +1,4 @@
 import { replHandleKeyPress } from "./repl.js";
-import { startFpgaUpdate } from "./update.js";
 
 let Keyboard = window.SimpleKeyboard.default;
 
@@ -131,7 +130,7 @@ function onKeyPress(button) {
             break;
 
         case "{upload}":
-            startFpgaUpdate();
+            uploadButton.click();
             break;
 
         case "{clear}":
