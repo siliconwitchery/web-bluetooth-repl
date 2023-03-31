@@ -101,9 +101,7 @@ window.updateFpgaFromFile = (input) => {
     }
 
     let file = input.files[0];
-
-    if (file.type != 'application/macbinary' ||
-        file.size != 444430) {
+    if (!file.name.includes('.bin') || file.size != 444430) {
         infoText.innerHTML = "Invalid FPGA file. Expected a .bin file that should be 444kB";
         return;
     }

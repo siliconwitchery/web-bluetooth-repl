@@ -166,7 +166,7 @@ async function downloadLatestFpgaImage() {
 
     let assetId;
     response.data.assets.forEach((item, index) => {
-        if (item.content_type === 'application/macbinary') {
+        if (item.name.includes('.bin')) {
             assetId = item.id;
         }
     });
