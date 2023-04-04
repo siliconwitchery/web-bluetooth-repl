@@ -124,7 +124,7 @@ async function updateFPGA(file) {
     }
     let asciiFile = btoa(binary);
 
-    await replSend('import ubinascii, update, device, bluetooth');
+    await replSend('import ubinascii, update, device, bluetooth, fpga');
 
     let response = await replSend('print(bluetooth.max_length())');
     const maxMtu = parseInt(response.match(/\d/g).join(''), 10);
@@ -134,6 +134,7 @@ async function updateFPGA(file) {
     let chunks = Math.ceil(asciiFile.length / chunk_size);
     console.log("Chunk size = " + chunk_size + ". Total chunks = " + chunks);
 
+    await replSend('fpga.run(False)');
     await replSend('update.Fpga.erase()');
     for (let chk = 0; chk < chunks; chk++) {
         response = await replSend("update.Fpga.write(ubinascii.a2b_base64(b'" +
