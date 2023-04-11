@@ -1,6 +1,6 @@
 import { connect, disconnect, isConnected } from "./bluetooth.js";
 import { replHandleKeyPress, replResetConsole, replFocusCursor } from "./repl.js";
-import { checkForUpdates, startFirmwareUpdate, startFPGAUpdate } from "./update.js"
+import { checkForUpdates, startFirmwareUpdate, startFpgaUpdate } from "./update.js"
 import { startNordicDFU } from "./nordicdfu.js"
 
 const replPlaceHolderText =
@@ -33,7 +33,7 @@ export async function ensureConnected() {
         let connectionResult = await connect();
 
         if (connectionResult === "dfu connected") {
-            infoText.innerHTML = "Starting firmware update..";
+            infoText.innerHTML = "Starting firmware update";
             await startNordicDFU()
                 .catch(() => {
                     disconnect();
@@ -43,15 +43,8 @@ export async function ensureConnected() {
         }
 
         if (connectionResult === "repl connected") {
-            infoText.innerHTML = "Connected";
+            infoText.innerHTML = await checkForUpdates();
             replResetConsole();
-
-            let updateInfo = await checkForUpdates();
-            if (updateInfo != "") {
-                infoText.innerHTML = updateInfo + " Click <a href='#' " +
-                    "onclick='update();return false;'>" +
-                    "here</a> to update.";
-            }
         }
     }
 
@@ -101,17 +94,59 @@ clearButton.addEventListener('click', () => {
     replHandleKeyPress("k", false, true);
 });
 
-fpgaUpdateButton.addEventListener('click', () => {
-    startFPGAUpdate();
-});
+window.updateFpgaFromFile = (input) => {
 
-window.update = () => {
-    infoText.innerHTML = "Reconnect to the DFU device to begin the update.";
-    startFirmwareUpdate();
+    if (input.files.length === 0) {
+        return;
+    }
+
+    let file = input.files[0];
+    if (!file.name.includes('.bin') || file.size != 444430) {
+        infoText.innerHTML = "Invalid FPGA file. Expected a .bin file that should be 444kB";
+        return;
+    }
+
+    let reader = new FileReader();
+
+    reader.readAsArrayBuffer(file);
+
+    reader.onload = function () {
+        startFpgaUpdate(reader.result)
+            .then(() => {
+                infoText.innerHTML = "FPGA update completed. Reconnect";
+            })
+            .catch(error => {
+                infoText.innerHTML = error;
+            })
+    };
+
+    reader.onerror = function () {
+        infoText.innerHTML = reader.error;
+    };
+}
+
+window.updateFirmware = () => {
+    startFirmwareUpdate()
+        .then(() => {
+            infoText.innerHTML = "Reconnect to <b>DFUTarg</b> to begin the update";
+        })
+        .catch(error => {
+            infoText.innerHTML = error;
+        })
+}
+
+window.updateFpga = () => {
+    startFpgaUpdate()
+        .then(() => {
+            infoText.innerHTML = "FPGA update completed. Reconnect";
+        })
+        .catch(error => {
+            infoText.innerHTML = error;
+        })
 }
 
 export function reportUpdatePercentage(percentage) {
-    infoText.innerHTML = "Updating " + percentage + "%..";
+    infoText.innerHTML = "Updating " + percentage.toFixed(2) + "%";
 }
 
 // TODO

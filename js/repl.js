@@ -9,6 +9,12 @@ let rawReplResponseCallback;
 export async function replRawMode(enable) {
 
     if (enable === true) {
+
+        // Prevent multiple entries to raw mode
+        if (replRawModeEnabled) {
+            return Promise.reject("REPL is busy. Wait until current operations are complete");
+        }
+
         replRawModeEnabled = true;
         console.log("Entering raw REPL mode");
         await replSend('\x03\x01');
@@ -269,7 +275,15 @@ replConsole.addEventListener('keydown', (event) => {
 // This handles paste events
 replConsole.addEventListener('beforeinput', (event) => {
 
-    replSend(event.data.replaceAll('\n', '\r'));
+    let string = event.data;
+
+    // Convert CRLF to just LF in the case of windows style line endings
+    string = string.replaceAll('\r\n', '\r');
+
+    // Convert LF to CR in the case of Unix style line endings
+    string = string.replaceAll('\n', '\r');
+
+    replSend(string);
     event.preventDefault();
 });
 

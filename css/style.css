@@ -95,6 +95,11 @@ button:disabled {
     background-color: var(--bg-color);
 }
 
+input[type=file],
+input[type=file]::file-selector-button {
+    display: none;
+}
+
 .keyboard {
     height: 0;
     width: 100%;

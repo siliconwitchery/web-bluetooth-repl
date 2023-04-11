@@ -29,13 +29,10 @@ This REPL demonstrates how you can build your own Web Bluetooth based applicatio
 
 In mobile views, the buttons are replaced by an on-screen keyboard. This was originally a workaround based on how the Android keyboard (doesn't) work. Now you'll find some useful keys in the new keyboard.
 
-## Automation:
+## Device updates:
 
-For Brilliant's devices, there is some built in automation which is used to check the firmware and display upgrade prompts. This also includes the capability to automatically detect the firmware update mode, download the relevant files from GitHub, and start updating.
+Upon connection, both the MicroPython firmware as well as FPGA image versions are checked against the latest release on GitHub. If they do not match the latest, a message will appear in the corner which prompts the user to update.
 
-## Coming soon
+Users can also upload custom FPGA image files using the "Upload" button.
 
-- FPGA bitstream loading support for S1 devices.
-- FPGA bitstream loading support for Brilliant devices.
-- Python file upload for Brilliant devices.
-- Firmware upgrading for S1 devices.
+**Note** that firmware/FPGA update is currently only supported on Brilliant devices.
