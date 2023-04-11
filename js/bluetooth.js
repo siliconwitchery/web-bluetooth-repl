@@ -97,7 +97,7 @@ export async function connect() {
         rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
     }
 
-    return Promise.resolve({status:"repl connected",device:device});
+    return Promise.resolve("repl connected");
 }
 
 export async function disconnect() {
