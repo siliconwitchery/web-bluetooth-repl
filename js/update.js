@@ -64,7 +64,7 @@ async function getUpdateInfo() {
     latestVersion = getTag.data.tag_name;
 
     response = await replSend("import fpga;" +
-        "print('v'+(lambda:''.join('%02x' % i for i in fpga.read(2,3)))());" +
+        "print(fpga.read(2,12));" +
         "del(fpga)");
     if (response.includes("Error")) {
         return "Could not detect the FPGA image. Click " +
