@@ -1,6 +1,6 @@
 # Web Bluetooth based MicroPython REPL 
 
-For use with Bluetooth enabled MicroPython devices such as the [S1 Module](https://www.siliconwitchery.com/module), and the [Brilliant Monocle](https://www.brilliantmonocle.com).
+For use with Bluetooth enabled MicroPython devices such as the [S1 Module](https://www.siliconwitchery.com/module), and the [Brilliant Monocle](https://www.brilliant.xyz).
 
 > Try it here: https://repl.siliconwitchery.com
 
@@ -19,7 +19,7 @@ This REPL demonstrates how you can build your own Web Bluetooth based applicatio
 - **Cmd-Right** - Moves the cursor to the end of the line.
 - **Cmd-Backspace** - Clears the line.
 - **Ctrl-K / Cmd-K** - Clears the screen
-- **Ctrl-A** - Puts MicroPython into [raw mode](https://www.brilliantmonocle.com).
+- **Ctrl-A** - Puts MicroPython into [raw mode](https://docs.micropython.org/en/latest/reference/repl.html#raw-mode-and-raw-paste-mode).
 - **Ctrl-B** - Puts Micropython into normal mode. This is the mode you probably want to use.
 - **Ctrl-C** - Sends a Keyboard Interrupt. Useful for breaking out of running scripts or loops.
 - **Ctrl-D** - Executes a raw mode command, or resets the device.
