@@ -13,11 +13,18 @@ export async function checkForUpdates() {
     // Short delay to throw away bluetooth data received upon connection
     await new Promise(r => setTimeout(r, 100));
 
-    let message = await getUpdateInfo();
+    let message = ""
 
-    await replRawMode(false);
-
-    return message;
+    try {
+        message = await getUpdateInfo();
+    }
+    catch {
+        message = "Error fetching update. Check console for details."
+    }
+    finally {
+        await replRawMode(false);
+        return message;
+    }
 }
 
 async function getUpdateInfo() {
