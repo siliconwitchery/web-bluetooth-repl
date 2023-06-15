@@ -32,7 +32,7 @@ let keyboard = new Keyboard({
         ],
         ctrl: [
             "{ctrl-a} {ctrl-b} {ctrl-c} {ctrl-d} {ctrl-e}",
-            `{upload} {clear}`,
+            `{upload} {clear} {safe}`,
             "{num} {up} {down} {left} {right} {bksp}",
             "{default} {space} {return}"
         ]
@@ -57,6 +57,7 @@ let keyboard = new Keyboard({
 
         "{upload}": "upload fpga file",
         "{clear}": "clear repl",
+        "{safe}": "safe mode",
 
         "{up}": "⇧",
         "{down}": "⇩",
@@ -68,7 +69,6 @@ let keyboard = new Keyboard({
 function onKeyPress(button) {
 
     const currentLayout = keyboard.options.layoutName;
-
     switch (button) {
         case "{shift}":
             if (currentLayout === "default")
@@ -135,6 +135,10 @@ function onKeyPress(button) {
 
         case "{clear}":
             replHandleKeyPress("k", false, true);
+            break;
+
+        case "{safe}":
+            replHandleKeyPress("\\", true, false);
             break;
 
         case "{up}":
