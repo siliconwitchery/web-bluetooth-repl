@@ -164,28 +164,17 @@ async function updateFPGA(file) {
 
 async function downloadLatestFpgaImage() {
 
-    let chip_rev = "revC"
-
-    let response = await replSend("import fpga;print(fpga.version())");
-    if (response.includes("revB")) {
-        chip_rev = "revB"
-    }
-
-    console.log("Downloading latest " + chip_rev + " release from: github.com/" +
+    console.log("Downloading latest release from: github.com/" +
         fpgaGit.owner + "/" + fpgaGit.repo);
 
-    response = await request("GET /repos/{owner}/{repo}/releases/latest", {
+    let response = await request("GET /repos/{owner}/{repo}/releases/latest", {
         owner: fpgaGit.owner,
         repo: fpgaGit.repo
     });
 
     let assetId;
     response.data.assets.forEach((item, index) => {
-        if (item.name.includes('revC.bin') && chip_rev == "revC") {
-            assetId = item.id;
-        }
-
-        if (item.name.includes('revB.bin') && chip_rev == "revB") {
+        if (item.name.includes('.bin')) {
             assetId = item.id;
         }
     });
