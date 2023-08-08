@@ -44,11 +44,13 @@ export async function replSend(string) {
 
         console.log('Raw REPL ⬆️: ' +
             string
-                .replaceAll('\n', '\\n')
-                .replaceAll('\x01', '\\x01')
-                .replaceAll('\x02', '\\x02')
-                .replaceAll('\x03', '\\x03')
-                .replaceAll('\x04', '\\x04'));
+                .replaceAll('\n', '{LF}')
+                .replaceAll('\x01', '{Ctrl-A}')
+                .replaceAll('\x02', '{Ctrl-B}')
+                .replaceAll('\x03', '{Ctrl-C}')
+                .replaceAll('\x04', '{Ctrl-D}')
+                .replaceAll('\x04', '{Ctrl-E}')
+                .replaceAll('\x1C', '{Ctrl-\\}'));
     }
 
     // Encode the UTF-8 string into an array and populate the buffer
@@ -59,7 +61,7 @@ export async function replSend(string) {
     // response handler calls the function associated with rawReplResponseCallback
     return new Promise(resolve => {
         rawReplResponseCallback = function (responseString) {
-            console.log('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
+            console.log('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '{CRLF}'))
             resolve(responseString);
         };
         setTimeout(() => {
@@ -168,6 +170,10 @@ export function replHandleKeyPress(key, ctrlKey, metaKey) {
 
             case 'e':
                 replSend('\x05');
+                break;
+
+            case '\\':
+                replSend('\x1C'); // Safe mode signal
                 break;
 
             case 'k':
